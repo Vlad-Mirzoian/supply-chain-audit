@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// HomeURL is the home page of the suite, named in the SARIF reports and in
+// the User-Agent of its requests.
+const HomeURL = "https://github.com/Vlad-Mirzoian/supply-chain-audit"
+
 // Ecosystem identifiers used throughout the suite (purl types).
 const (
 	NPM   = "npm"

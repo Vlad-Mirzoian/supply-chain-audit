@@ -24,6 +24,9 @@ import (
 	"time"
 )
 
+// homeURL is model.HomeURL (netx does not import the data model).
+const homeURL = "https://github.com/Vlad-Mirzoian/supply-chain-audit"
+
 // DefaultTTL is how long an online run reuses a cached response.
 const DefaultTTL = 24 * time.Hour
 
@@ -87,7 +90,7 @@ func New(cacheDir string, offline bool) *Client {
 		CacheDir:  cacheDir,
 		Offline:   offline,
 		TTL:       DefaultTTL,
-		UserAgent: "ssca/0.9 (supply-chain audit research prototype)",
+		UserAgent: "ssca (+" + homeURL + ")",
 		hostSem:   map[string]chan struct{}{},
 		used:      map[string]string{},
 		inflight:  map[string]*call{},

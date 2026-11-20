@@ -13,6 +13,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/maven"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/npm"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/pypi"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/netx"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/risk"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/vuln"
@@ -28,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.0.1"
+var Version = "1.0.2"
 
 type global struct {
 	cacheDir string
@@ -99,6 +100,7 @@ func parseArgs(fs *flag.FlagSet, args []string) (int, bool) {
 
 func (g *global) client() *netx.Client {
 	c := netx.New(g.cacheDir, g.offline)
+	c.UserAgent = "ssca/" + Version + " (+" + model.HomeURL + ")"
 	// SSCA_CACHE_TTL (a Go duration) changes how long an online run reuses a
 	// cached response; the experiments use a long TTL to add only the
 	// responses that a frozen snapshot lacks, without refreshing the others

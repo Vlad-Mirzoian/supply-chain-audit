@@ -228,7 +228,7 @@ func (r *Report) SARIF() ([]byte, error) {
 	doc := map[string]any{
 		"$schema": "https://json.schemastore.org/sarif-2.1.0.json", "version": "2.1.0",
 		"runs": []map[string]any{{
-			"tool":    map[string]any{"driver": map[string]any{"name": "ssca", "version": r.Version, "informationUri": "https://example.invalid/ssca", "rules": rl}},
+			"tool":    map[string]any{"driver": map[string]any{"name": "ssca", "version": r.Version, "informationUri": model.HomeURL, "rules": rl}},
 			"results": results,
 		}},
 	}
