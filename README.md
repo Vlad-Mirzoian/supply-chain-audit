@@ -10,7 +10,10 @@ and turns the result into a pass/fail decision against a policy. Every run can
 be repeated offline from a frozen data snapshot.
 
 It is a research prototype developed for the master's thesis *A Study of
-Security and Transparency Issues in Software Supply Chains*.
+Security and Transparency Issues in Software Supply Chains*. How to repeat the
+experiments of the thesis offline is described in [REPRODUCE.md](REPRODUCE.md);
+a live demo of the CI gate is
+[supply-chain-audit-demo](https://github.com/Vlad-Mirzoian/supply-chain-audit-demo).
 
 ## Features
 

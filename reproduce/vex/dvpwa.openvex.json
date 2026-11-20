@@ -1,0 +1,43 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://ssca.local/vex/sha256:ac113f44122c671735c5c8a5fb5c60df",
+  "author": "ssca 0.9.0-dev (automated, requires review)",
+  "statements": [
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:pypi/pyyaml@3.13"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2020-14343",
+          "PYSEC-2021-142"
+        ],
+        "name": "GHSA-8q59-q68h-6hv4"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:pypi/pyyaml@3.13"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2017-18342",
+          "PYSEC-2018-49"
+        ],
+        "name": "GHSA-rprw-h62v-c2w7"
+      }
+    }
+  ],
+  "timestamp": "2026-11-06T12:00:00Z",
+  "version": 1
+}

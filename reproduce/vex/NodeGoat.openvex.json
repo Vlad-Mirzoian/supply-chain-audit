@@ -1,0 +1,861 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://ssca.local/vex/sha256:fe732554b746814f7db086c36dd48e2f",
+  "author": "ssca 0.9.0-dev (automated, requires review)",
+  "statements": [
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/fsevents@1.2.9"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2023-45311"
+        ],
+        "name": "GHSA-8r6j-v8pm-fqw3"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimist@0.0.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-44906"
+        ],
+        "name": "GHSA-xvch-5gv4-984h"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimist@1.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-44906"
+        ],
+        "name": "GHSA-xvch-5gv4-984h"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimist@1.2.5"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-44906"
+        ],
+        "name": "GHSA-xvch-5gv4-984h"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/mixin-deep@1.3.1"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2019-10746",
+          "SNYK-JS-MIXINDEEP-450212"
+        ],
+        "name": "GHSA-fhjf-83wg-r2j9"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/set-value@0.4.3"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2019-10747",
+          "SNYK-JS-SETVALUE-450213"
+        ],
+        "name": "GHSA-4g88-fppr-53pp"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/set-value@2.0.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2019-10747",
+          "SNYK-JS-SETVALUE-450213"
+        ],
+        "name": "GHSA-4g88-fppr-53pp"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-59873"
+        ],
+        "name": "GHSA-23hp-3jrh-7fpw"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-13149"
+        ],
+        "name": "GHSA-3jxr-9vmj-r5cp"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-102276"
+        ],
+        "name": "GHSA-6j4f-fj2g-mc7p"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-14257"
+        ],
+        "name": "GHSA-mh99-v99m-4gvg"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-102278"
+        ],
+        "name": "GHSA-qhr7-859c-m2p7"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-69152"
+        ],
+        "name": "GHSA-rgw5-rvv9-x895"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/braces@2.3.2"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2024-4068"
+        ],
+        "name": "GHSA-grv7-fg5c-xmjg"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/decode-uri-component@0.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2022-38900"
+        ],
+        "name": "GHSA-w573-4hg7-7wgq"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/i@0.3.6"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-3820"
+        ],
+        "name": "GHSA-x55w-vjjp-222r"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/ini@1.3.5"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2020-7788",
+          "SNYK-JS-INI-1048974"
+        ],
+        "name": "GHSA-qqgx-2p2h-9c37"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/kind-of@6.0.2"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2019-20149"
+        ],
+        "name": "GHSA-6c8f-qphg-qjgp"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimatch@3.0.4"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-27904"
+        ],
+        "name": "GHSA-23c5-xmqv-rm74"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimatch@3.0.4"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-26996"
+        ],
+        "name": "GHSA-3ppc-4f35-3m26"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimatch@3.0.4"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-27903"
+        ],
+        "name": "GHSA-7r86-cg39-jmmj"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimatch@3.0.4"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2022-3517"
+        ],
+        "name": "GHSA-f8q6-p94x-37v3"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/nconf@0.10.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2022-21803"
+        ],
+        "name": "GHSA-6xwr-q98w-rvg7"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/nconf@0.6.9"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2022-21803"
+        ],
+        "name": "GHSA-6xwr-q98w-rvg7"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/semver@5.7.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2022-25883"
+        ],
+        "name": "GHSA-c2qf-rxjj-qqgw"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/set-value@0.4.3"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-23440"
+        ],
+        "name": "GHSA-4jqc-8m5r-9rpr"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/set-value@2.0.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-23440"
+        ],
+        "name": "GHSA-4jqc-8m5r-9rpr"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-24842"
+        ],
+        "name": "GHSA-34x7-hfp2-rc4v"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-32804"
+        ],
+        "name": "GHSA-3jfq-g458-7qm9"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-37713"
+        ],
+        "name": "GHSA-5955-9wpr-37jh"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-26960"
+        ],
+        "name": "GHSA-83g3-92jg-28cx"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-23745"
+        ],
+        "name": "GHSA-8qq5-rm4j-mr97"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-59874"
+        ],
+        "name": "GHSA-8x88-c5mf-7j5w"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-31802"
+        ],
+        "name": "GHSA-9ppj-qmqm-q256"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-37701"
+        ],
+        "name": "GHSA-9r2w-394v-53qc"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-29786"
+        ],
+        "name": "GHSA-qffp-2rhf-9h96"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-37712"
+        ],
+        "name": "GHSA-qq89-hq3f-393p"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-73566"
+        ],
+        "name": "GHSA-r292-9mhp-454m"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2021-32803"
+        ],
+        "name": "GHSA-r628-mhmh-qjhw"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-23950"
+        ],
+        "name": "GHSA-r6q2-hw4h-h46w"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/y18n@3.2.1"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2020-7774"
+        ],
+        "name": "GHSA-c4w7-xm78-47vh"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-33750"
+        ],
+        "name": "GHSA-f886-m6hf-6m8v"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-102277"
+        ],
+        "name": "GHSA-q2hr-2g5m-vwhr"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/decode-uri-component@0.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-45822"
+        ],
+        "name": "GHSA-vcc3-ghjq-m6fr"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/micromatch@3.1.10"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2024-4067"
+        ],
+        "name": "GHSA-952p-6rrq-rcjv"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimist@0.0.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2020-7598"
+        ],
+        "name": "GHSA-vh95-rmgr-6w4m"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/minimist@1.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2020-7598"
+        ],
+        "name": "GHSA-vh95-rmgr-6w4m"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2024-28863"
+        ],
+        "name": "GHSA-f5x3-32g6-xq36"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-59875"
+        ],
+        "name": "GHSA-gvwx-54wh-qm9j"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-53655"
+        ],
+        "name": "GHSA-vmf3-w455-68vh"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/tar@4.4.8"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-59871"
+        ],
+        "name": "GHSA-w8wr-v893-vjvp"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/brace-expansion@1.1.11"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2025-5889"
+        ],
+        "name": "GHSA-v6h2-p8h4-qcjw"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/debug@4.1.1"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2017-16137"
+        ],
+        "name": "GHSA-gxpj-cx7g-858c"
+      }
+    }
+  ],
+  "timestamp": "2026-11-06T12:00:00Z",
+  "version": 1
+}

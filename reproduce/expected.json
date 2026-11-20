@@ -1,0 +1,2564 @@
+{
+ "description": "Expected results of every stored ssca run of the thesis, Section 4. Run each command in cwd with SSCA_CACHE pointing at the extracted snapshot; reproduce/check.py compares a report.json with the entry.",
+ "snapshots_sha256": {
+  "ssca-snapshot-2026-11-06.tar.gz": "ece87fb8b4c23c344d4bf55b26c7eae45f2d969fc1cf59ecd770b2b11d7cd827",
+  "ssca-snapshot-2026-11-07.tar.gz": "ef2ad989076f557162a70fb5f19604aa9d112cabdd13e2d325c7feecd1fb49de",
+  "ssca-snapshot-2026-11-20.tar.gz": "73524e534654b56aa7f1d68210570c6f46a9b371f70253a90faeed6d8c8f6cac",
+  "ssca-snapshot-corpus-d-2026-11-10.tar.gz": "7aa0a0c745e1778236158a14995f376d520ba216212f2994d5694769857ba354",
+  "ssca-snapshot-fresh-2026-11-10.tar.gz": "298f845eceef57bd3e96b29dbd95f08d611ffbad73b06b9086af863371043730",
+  "ssca-snapshot-holdout-2026-11-10.tar.gz": "47acec550329e94c6dc0fc65f719796075574460cb43ec6b9683bc17cd7fbe3a",
+  "ssca-snapshot-holdout-2026-11-11.tar.gz": "10baddcb7403e545a922b5c5f8d79cab50c58be7da400fb041b998222797eef4",
+  "ssca-snapshot-holdout-mem0-2026-11-11.tar.gz": "646ce4b3aef420c4fa3f0f3a97360cc7248738ac4f43527fee081c457eb80f13",
+  "ssca-snapshot-nfr01-joplin-2026-11-11.tar.gz": "ee540eb09cdd9c5401f336fae4633a9bf5a9a80ccc5ad067f69358d14e9887d4",
+  "ssca-snapshot-nfr01-novu-2026-11-11.tar.gz": "c0255a4852939d5233d3f01ba58b1c0abe9a850837f91b4e6b0ffd72b13358ef"
+ },
+ "runs": [
+  {
+   "run": "a_default/NodeGoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-07T16:11:47Z",
+    "corpus/a/NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1091,
+    "findings": 91,
+    "vulnerabilities_by_severity": {
+     "critical": 12,
+     "high": 48,
+     "low": 9,
+     "medium": 20
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:4283542425db96130f2fed6f84c687c0"
+   }
+  },
+  {
+   "run": "a_default/WebGoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:28:39Z",
+    "corpus/a/WebGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 244,
+    "findings": 55,
+    "vulnerabilities_by_severity": {
+     "critical": 5,
+     "high": 32,
+     "medium": 18
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:6947f02a0afed2842c95e20509ddedce"
+   }
+  },
+  {
+   "run": "a_default/clients",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-07T00:34:03Z",
+    "corpus/a/clients"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-07.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2664,
+    "findings": 24,
+    "vulnerabilities_by_severity": {
+     "high": 13,
+     "low": 3,
+     "medium": 7
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:b58f17c1e8a45d7281027ba4be11bf13"
+   }
+  },
+  {
+   "run": "a_default/dependency-track",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:28:56Z",
+    "corpus/a/dependency-track"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 287,
+    "findings": 6,
+    "vulnerabilities_by_severity": {
+     "high": 4,
+     "medium": 2
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:e75c97903e078cdeafb820cadbfd73de"
+   }
+  },
+  {
+   "run": "a_default/excalidraw",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:29:05Z",
+    "corpus/a/excalidraw"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1307,
+    "findings": 59,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 38,
+     "low": 3,
+     "medium": 16
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:1a21c8ca9ef28d7efa5a1e901206ae77"
+   }
+  },
+  {
+   "run": "a_default/mitmproxy",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:29:14Z",
+    "corpus/a/mitmproxy"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 116,
+    "findings": 11,
+    "vulnerabilities_by_severity": {
+     "high": 8,
+     "low": 1,
+     "medium": 2
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:7e5d819ec23e376ec4ff7487eb2a9410"
+   }
+  },
+  {
+   "run": "a_default/n8n",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:29:32Z",
+    "corpus/a/n8n"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 3629,
+    "findings": 78,
+    "vulnerabilities_by_severity": {
+     "high": 28,
+     "low": 7,
+     "medium": 41
+    },
+    "violations": [
+     "band-critical",
+     "integrity-failure"
+    ],
+    "incomplete": 2,
+    "data_snapshot": "sha256:568ba9037d19eda02147b233fed8fb69"
+   }
+  },
+  {
+   "run": "a_default/netbox",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:29:43Z",
+    "corpus/a/netbox"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 93,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:118ed7caaae002614e2bc9bfadbed12b"
+   }
+  },
+  {
+   "run": "a_default/paperless-ngx",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:29:54Z",
+    "corpus/a/paperless-ngx"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 268,
+    "findings": 28,
+    "vulnerabilities_by_severity": {
+     "critical": 1,
+     "high": 9,
+     "low": 5,
+     "medium": 13
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 5,
+    "data_snapshot": "sha256:60ab1c60fd09c6ddd1c4046c422f0b9d"
+   }
+  },
+  {
+   "run": "a_default/poetry",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:30:03Z",
+    "corpus/a/poetry"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 75,
+    "findings": 18,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "low": 4,
+     "medium": 12
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:ec0ca41d78b544068dc617346c1526be"
+   }
+  },
+  {
+   "run": "a_default/pygoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:30:11Z",
+    "corpus/a/pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 188,
+    "vulnerabilities_by_severity": {
+     "critical": 14,
+     "high": 81,
+     "low": 18,
+     "medium": 75
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:6b493a77cb7a0e54929f74e15438f5d9"
+   }
+  },
+  {
+   "run": "a_default/sentry",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-07T16:11:53Z",
+    "corpus/a/sentry"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 256,
+    "findings": 8,
+    "vulnerabilities_by_severity": {
+     "high": 6,
+     "medium": 2
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:85ab4c9158feaee8e96032e4ef6c6ba7"
+   }
+  },
+  {
+   "run": "a_default/sigstore-js",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:30:26Z",
+    "corpus/a/sigstore-js"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 870,
+    "findings": 3,
+    "vulnerabilities_by_severity": {
+     "low": 1,
+     "medium": 2
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:b0864c2aecff2e2983d61f00cc1669a7"
+   }
+  },
+  {
+   "run": "a_default/spring-petclinic",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:30:30Z",
+    "corpus/a/spring-petclinic"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 171,
+    "findings": 20,
+    "vulnerabilities_by_severity": {
+     "critical": 7,
+     "high": 7,
+     "medium": 6
+    },
+    "violations": [
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:6bf0cbaba12bdd270abc1fb3da489a86"
+   }
+  },
+  {
+   "run": "a_default/strapi",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-07T00:34:24Z",
+    "corpus/a/strapi"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-07.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2812,
+    "findings": 50,
+    "vulnerabilities_by_severity": {
+     "high": 14,
+     "low": 6,
+     "medium": 27
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:a5d5b94e59fb27a11053ced040c11e88"
+   }
+  },
+  {
+   "run": "a_default/vscode",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), default mode, data of 6-7 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:30:52Z",
+    "corpus/a/vscode"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1420,
+    "findings": 16,
+    "vulnerabilities_by_severity": {
+     "high": 8,
+     "low": 1,
+     "medium": 7
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 1,
+    "data_snapshot": "sha256:f1e253ef451f30602e5c3ca17d6d86c2"
+   }
+  },
+  {
+   "run": "a/NodeGoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:23:32Z",
+    "corpus/a/NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1091,
+    "findings": 91,
+    "vulnerabilities_by_severity": {
+     "critical": 12,
+     "high": 48,
+     "low": 9,
+     "medium": 20
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:9ec5b728cf9f7deaf7634aa4088e620f"
+   }
+  },
+  {
+   "run": "a/WebGoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:25:40Z",
+    "corpus/a/WebGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 244,
+    "findings": 55,
+    "vulnerabilities_by_severity": {
+     "critical": 5,
+     "high": 32,
+     "medium": 18
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:0e84eb82cb6dea3b0d0fd4adaf067d29"
+   }
+  },
+  {
+   "run": "a/clients",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:31:29Z",
+    "corpus/a/clients"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2664,
+    "findings": 33,
+    "vulnerabilities_by_severity": {
+     "high": 15,
+     "low": 6,
+     "medium": 11
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:e73fa1c9f52375a5d770887f41a5aa87"
+   }
+  },
+  {
+   "run": "a/dependency-track",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:34:20Z",
+    "corpus/a/dependency-track"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 287,
+    "findings": 7,
+    "vulnerabilities_by_severity": {
+     "high": 4,
+     "medium": 3
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:727b6797c0bcfeaa0e2db24a7731e24d"
+   }
+  },
+  {
+   "run": "a/excalidraw",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:37:27Z",
+    "corpus/a/excalidraw"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1307,
+    "findings": 59,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 38,
+     "low": 3,
+     "medium": 16
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:f2273166890b043ee3c32e3cf12d9952"
+   }
+  },
+  {
+   "run": "a/mitmproxy",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:39:16Z",
+    "corpus/a/mitmproxy"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 116,
+    "findings": 13,
+    "vulnerabilities_by_severity": {
+     "high": 8,
+     "low": 2,
+     "medium": 3
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:1c96e7cedcf14a3ae53a30fdd81844ed"
+   }
+  },
+  {
+   "run": "a/n8n",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:41:47Z",
+    "corpus/a/n8n"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 3629,
+    "findings": 87,
+    "vulnerabilities_by_severity": {
+     "high": 28,
+     "low": 8,
+     "medium": 49
+    },
+    "violations": [
+     "band-critical",
+     "integrity-failure"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:3da73e2ea42a3453f82f4df6d4f62703"
+   }
+  },
+  {
+   "run": "a/netbox",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:44:01Z",
+    "corpus/a/netbox"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 93,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:955bc1cc0f38fe2a3f265b090c8c84a4"
+   }
+  },
+  {
+   "run": "a/paperless-ngx",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:45:46Z",
+    "corpus/a/paperless-ngx"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 268,
+    "findings": 60,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 21,
+     "low": 6,
+     "medium": 31
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 5,
+    "data_snapshot": "sha256:764575550510e79dfcda77b61e92fd7a"
+   }
+  },
+  {
+   "run": "a/poetry",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:46:18Z",
+    "corpus/a/poetry"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 75,
+    "findings": 18,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "low": 4,
+     "medium": 12
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:045baa1570f41c082b910691009f6c52"
+   }
+  },
+  {
+   "run": "a/pygoat",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:46:44Z",
+    "corpus/a/pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 190,
+    "vulnerabilities_by_severity": {
+     "critical": 14,
+     "high": 82,
+     "low": 18,
+     "medium": 76
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:75453b51bea91fe597d59639170c24f2"
+   }
+  },
+  {
+   "run": "a/sentry",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:47:48Z",
+    "corpus/a/sentry"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 256,
+    "findings": 15,
+    "vulnerabilities_by_severity": {
+     "high": 10,
+     "medium": 5
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:2ff36abe5c7d23507805f34284662006"
+   }
+  },
+  {
+   "run": "a/sigstore-js",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:48:30Z",
+    "corpus/a/sigstore-js"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 870,
+    "findings": 3,
+    "vulnerabilities_by_severity": {
+     "low": 1,
+     "medium": 2
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:30b7a01193060e36f1196ec5931b629f"
+   }
+  },
+  {
+   "run": "a/spring-petclinic",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:49:40Z",
+    "corpus/a/spring-petclinic"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 171,
+    "findings": 20,
+    "vulnerabilities_by_severity": {
+     "critical": 7,
+     "high": 7,
+     "medium": 6
+    },
+    "violations": [
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:48bc6cc2d5664680907ed975dfdf4358"
+   }
+  },
+  {
+   "run": "a/strapi",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:53:28Z",
+    "corpus/a/strapi"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2812,
+    "findings": 56,
+    "vulnerabilities_by_severity": {
+     "high": 14,
+     "low": 7,
+     "medium": 32
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:538785bac99df4489f1120aac7f7242a"
+   }
+  },
+  {
+   "run": "a/vscode",
+   "used_in": "RQ1, RQ6, calibration",
+   "what": "corpus (a), comparison with the other tools, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:55:18Z",
+    "corpus/a/vscode"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1420,
+    "findings": 16,
+    "vulnerabilities_by_severity": {
+     "high": 8,
+     "low": 1,
+     "medium": 7
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:e606b8c1309ff685912aa4c7685f6888"
+   }
+  },
+  {
+   "run": "b/NodeGoat",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:12:01Z",
+    "corpus/b/NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1091,
+    "findings": 91,
+    "vulnerabilities_by_severity": {
+     "critical": 12,
+     "high": 48,
+     "low": 9,
+     "medium": 20
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:9ec5b728cf9f7deaf7634aa4088e620f"
+   }
+  },
+  {
+   "run": "b/dvpwa",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:13:21Z",
+    "corpus/b/dvpwa"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 18,
+    "findings": 72,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 16,
+     "low": 18,
+     "medium": 36
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:510f7b97989b0f793e3892de06342387"
+   }
+  },
+  {
+   "run": "b/java-goof",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:14:03Z",
+    "corpus/b/java-goof"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 76,
+    "findings": 192,
+    "vulnerabilities_by_severity": {
+     "critical": 46,
+     "high": 88,
+     "low": 4,
+     "medium": 54
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:7c2bb19ccf7bdd7cb749e907dcbff61c"
+   }
+  },
+  {
+   "run": "b/l4s-1-direct",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:14:55Z",
+    "corpus/b/l4s-1-direct"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 1,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:6ae61c57beaa7046063210fc42bf7048"
+   }
+  },
+  {
+   "run": "b/l4s-10-deep",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:15:11Z",
+    "corpus/b/l4s-10-deep"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 4,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 1,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:f1f46db040067ce3679961a658f9c589"
+   }
+  },
+  {
+   "run": "b/l4s-2-transitive",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:15:30Z",
+    "corpus/b/l4s-2-transitive"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 7,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 1,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:fe6f8f24a4815d0e4fbca1a37cf0c871"
+   }
+  },
+  {
+   "run": "b/l4s-3-parent-managed",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:15:52Z",
+    "corpus/b/l4s-3-parent-managed"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 7,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 1,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:fac84cb1d6787100777a97dc721570de"
+   }
+  },
+  {
+   "run": "b/l4s-4-property-override",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:16:05Z",
+    "corpus/b/l4s-4-property-override"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 7,
+    "findings": 5,
+    "vulnerabilities_by_severity": {
+     "medium": 5
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:51e4622a2ebfeaca5574e9064a177dce"
+   }
+  },
+  {
+   "run": "b/l4s-5-depmgmt-override",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:16:16Z",
+    "corpus/b/l4s-5-depmgmt-override"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 7,
+    "findings": 5,
+    "vulnerabilities_by_severity": {
+     "medium": 5
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:5b74e6e18709c173960fb383ed07c61c"
+   }
+  },
+  {
+   "run": "b/l4s-6-exclusion",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:16:36Z",
+    "corpus/b/l4s-6-exclusion"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 6,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:e87f9d930bac26d14a4ce0e7a416e631"
+   }
+  },
+  {
+   "run": "b/l4s-7-nearest-wins",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:16:55Z",
+    "corpus/b/l4s-7-nearest-wins"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 7,
+    "findings": 5,
+    "vulnerabilities_by_severity": {
+     "medium": 5
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:5a33cd3c3e77f871d0d647c829cac6b4"
+   }
+  },
+  {
+   "run": "b/l4s-8-test-scope",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:17:16Z",
+    "corpus/b/l4s-8-test-scope"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 2,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:13ba94a96fe6b4bf757bb529ec1b5651"
+   }
+  },
+  {
+   "run": "b/l4s-9-bom-import",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:17:32Z",
+    "corpus/b/l4s-9-bom-import"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 1,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:e78d4068eb1f1925f19ebc12b6a466c3"
+   }
+  },
+  {
+   "run": "b/nodejs-goof",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:18:11Z",
+    "corpus/b/nodejs-goof"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 980,
+    "findings": 236,
+    "vulnerabilities_by_severity": {
+     "critical": 39,
+     "high": 105,
+     "low": 14,
+     "medium": 78
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:d90a80a9f2149e809510ffc91256fe50"
+   }
+  },
+  {
+   "run": "b/pygoat",
+   "used_in": "RQ2",
+   "what": "corpus (b), data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:19:46Z",
+    "corpus/b/pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 190,
+    "vulnerabilities_by_severity": {
+     "critical": 14,
+     "high": 82,
+     "low": 18,
+     "medium": 76
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:75453b51bea91fe597d59639170c24f2"
+   }
+  },
+  {
+   "run": "d/pipenv",
+   "used_in": "RQ1, RQ2",
+   "what": "corpus (d), Pipfile.lock",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T00:00:00Z",
+    "corpus/d/pipenv"
+   ],
+   "snapshot": "ssca-snapshot-corpus-d-2026-11-10.tar.gz (directory d-live/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 85,
+    "findings": 0,
+    "vulnerabilities_by_severity": {},
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:c27ec5861affdcb11b602f35ae35852c"
+   }
+  },
+  {
+   "run": "d/sales-lead-qualifier",
+   "used_in": "RQ1, RQ2",
+   "what": "corpus (d), Pipfile.lock",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T00:00:00Z",
+    "corpus/d/sales-lead-qualifier"
+   ],
+   "snapshot": "ssca-snapshot-corpus-d-2026-11-10.tar.gz (directory d-live/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 224,
+    "findings": 210,
+    "vulnerabilities_by_severity": {
+     "critical": 15,
+     "high": 92,
+     "low": 25,
+     "medium": 78
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:bed92dea8ac15c4938bdc3220e812833"
+   }
+  },
+  {
+   "run": "a2/ComfyUI",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/ComfyUI"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 103,
+    "findings": 0,
+    "vulnerabilities_by_severity": {},
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:257992d0e76eeb036aef0c124be0ed99"
+   }
+  },
+  {
+   "run": "a2/awesome-python",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/awesome-python"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 21,
+    "findings": 0,
+    "vulnerabilities_by_severity": {},
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:29175330266bc946f6f7e20ef515a36e"
+   }
+  },
+  {
+   "run": "a2/freeCodeCamp",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/freeCodeCamp"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 2595,
+    "findings": 113,
+    "vulnerabilities_by_severity": {
+     "critical": 1,
+     "high": 33,
+     "low": 24,
+     "medium": 51
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "provenance-regression"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:caa601fbd82f8da9f1d35d21af57ca74"
+   }
+  },
+  {
+   "run": "a2/hermes-agent",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/hermes-agent"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "INCOMPLETE",
+    "exit_code": 2,
+    "components": 351,
+    "findings": 2,
+    "vulnerabilities_by_severity": {},
+    "violations": [],
+    "incomplete": 3,
+    "data_snapshot": "sha256:3aead793cedece3d476859f8fbe6d0d4"
+   }
+  },
+  {
+   "run": "a2/iptv",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/iptv"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 348,
+    "findings": 4,
+    "vulnerabilities_by_severity": {
+     "high": 1,
+     "medium": 3
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:ce85cef578a5c5bfc2b1d26f4ff9c0fd"
+   }
+  },
+  {
+   "run": "a2/java-design-patterns",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/java-design-patterns"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 467,
+    "findings": 221,
+    "vulnerabilities_by_severity": {
+     "critical": 21,
+     "high": 88,
+     "low": 30,
+     "medium": 78
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:4b7804a7e0d748a6b92aa17db9675656"
+   }
+  },
+  {
+   "run": "a2/mall",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/mall"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 207,
+    "findings": 102,
+    "vulnerabilities_by_severity": {
+     "critical": 13,
+     "high": 35,
+     "info": 1,
+     "low": 5,
+     "medium": 46
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:2644faf273c447712c2409e465d0e7ed"
+   }
+  },
+  {
+   "run": "a2/mem0",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/mem0"
+   ],
+   "snapshot": "ssca-snapshot-holdout-mem0-2026-11-11.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 316,
+    "findings": 19,
+    "vulnerabilities_by_severity": {
+     "critical": 1,
+     "high": 7,
+     "low": 1,
+     "medium": 10
+    },
+    "violations": [
+     "critical-reachable-cve"
+    ],
+    "incomplete": 1,
+    "data_snapshot": "sha256:bf583eaddbf7f924e71e17a45316655c"
+   }
+  },
+  {
+   "run": "a2/rea",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/rea"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 930,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:c9cf0b2fedbe915b434df17374d859d2"
+   }
+  },
+  {
+   "run": "a2/storybook",
+   "used_in": "RQ1, calibration",
+   "what": "hold-out corpus (a')",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:54:54Z",
+    "corpus/a2/storybook"
+   ],
+   "snapshot": "ssca-snapshot-holdout-2026-11-11.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 3411,
+    "findings": 310,
+    "vulnerabilities_by_severity": {
+     "critical": 13,
+     "high": 137,
+     "low": 28,
+     "medium": 131
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:501e72feb99e7fd75df25ada48af0e6f"
+   }
+  },
+  {
+   "run": "c/mal-npm",
+   "used_in": "RQ4",
+   "what": "known malicious versions, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:20:41Z",
+    "corpus/c/mal-npm"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 110,
+    "findings": 118,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "medium": 2
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:8f14f980c1b087f93fa0a75c6fc27999"
+   }
+  },
+  {
+   "run": "c/mal-pypi",
+   "used_in": "RQ4",
+   "what": "known malicious versions, data of 20 November",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-20T21:21:54Z",
+    "corpus/c/mal-pypi"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-20.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 131,
+    "findings": 129,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 12,
+     "low": 1,
+     "medium": 14
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "known-malicious"
+    ],
+    "incomplete": 98,
+    "data_snapshot": "sha256:6c29c714313482d9cefadd9f423e1f18"
+   }
+  },
+  {
+   "run": "c2/mal-npm-dev",
+   "used_in": "RQ4",
+   "what": "known malicious versions as dev dependencies",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T01:13:17Z",
+    "corpus/c2/mal-npm-dev"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 110,
+    "findings": 120,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "medium": 2
+    },
+    "violations": [
+     "band-critical",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:1bf1498d9672d718447d11e4e9ec15ad"
+   }
+  },
+  {
+   "run": "fresh/npm",
+   "used_in": "RQ4",
+   "what": "fresh legitimate releases",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:53:13Z",
+    "corpus/fresh/2026-11-10/npm"
+   ],
+   "snapshot": "ssca-snapshot-fresh-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 300,
+    "findings": 0,
+    "vulnerabilities_by_severity": {},
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:39fb2575fd93942b1e326b283f2b2ff0"
+   }
+  },
+  {
+   "run": "fresh/pypi",
+   "used_in": "RQ4",
+   "what": "fresh legitimate releases",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-10T20:53:13Z",
+    "corpus/fresh/2026-11-10/pypi"
+   ],
+   "snapshot": "ssca-snapshot-fresh-2026-11-10.tar.gz",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 300,
+    "findings": 1,
+    "vulnerabilities_by_severity": {
+     "medium": 1
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:c75cd51c7d9cbd8fe51e0ce1e84f2347"
+   }
+  },
+  {
+   "run": "nfr01/joplin",
+   "used_in": "RQ6 (NFR-01)",
+   "what": "two projects of ~5 000 components",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-11T01:16:23Z",
+    "corpus/nfr01/joplin"
+   ],
+   "snapshot": "ssca-snapshot-nfr01-joplin-2026-11-11.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 5601,
+    "findings": 582,
+    "vulnerabilities_by_severity": {
+     "critical": 20,
+     "high": 263,
+     "low": 71,
+     "medium": 226
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": null
+   },
+   "note": "the stored report is the first of three cold runs, the snapshot is the cache left by the last one: same results, but a different data snapshot ID, which is therefore not compared"
+  },
+  {
+   "run": "nfr01/novu",
+   "used_in": "RQ6 (NFR-01)",
+   "what": "two projects of ~5 000 components",
+   "cwd": ".",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-11T01:16:23Z",
+    "corpus/nfr01/novu"
+   ],
+   "snapshot": "ssca-snapshot-nfr01-novu-2026-11-11.tar.gz",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 5398,
+    "findings": 30,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 8,
+     "info": 1,
+     "low": 8,
+     "medium": 6
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": null
+   },
+   "note": "the stored report is the first of three cold runs, the snapshot is the cache left by the last one: same results, but a different data snapshot ID, which is therefore not compared"
+  },
+  {
+   "run": "reach/NodeGoat",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 380,
+    "findings": 98,
+    "vulnerabilities_by_severity": {
+     "critical": 12,
+     "high": 47,
+     "low": 9,
+     "medium": 20
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:fe732554b746814f7db086c36dd48e2f"
+   }
+  },
+  {
+   "run": "reach/NodeGoat_dev",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--include-dev",
+    "NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 1091,
+    "findings": 321,
+    "vulnerabilities_by_severity": {
+     "critical": 33,
+     "high": 169,
+     "low": 17,
+     "medium": 91
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "integrity-failure",
+     "known-malicious"
+    ],
+    "incomplete": 1,
+    "data_snapshot": "sha256:acdf2658a6405e41189b4994342e7697"
+   }
+  },
+  {
+   "run": "reach/NodeGoat_vex",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "--vex",
+    "reproduce/vex/NodeGoat.openvex.json",
+    "NodeGoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 380,
+    "findings": 98,
+    "vulnerabilities_by_severity": {
+     "critical": 4,
+     "high": 14,
+     "low": 7,
+     "medium": 10
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:fe732554b746814f7db086c36dd48e2f"
+   }
+  },
+  {
+   "run": "reach/dvpwa",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "dvpwa"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 18,
+    "findings": 63,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 8,
+     "low": 18,
+     "medium": 35
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:ac113f44122c671735c5c8a5fb5c60df"
+   }
+  },
+  {
+   "run": "reach/dvpwa_dev",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--include-dev",
+    "dvpwa"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 18,
+    "findings": 63,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 8,
+     "low": 18,
+     "medium": 35
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:9748408c3d8352dd8f3e6429c8823742"
+   }
+  },
+  {
+   "run": "reach/dvpwa_vex",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "--vex",
+    "reproduce/vex/dvpwa.openvex.json",
+    "dvpwa"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 18,
+    "findings": 63,
+    "vulnerabilities_by_severity": {
+     "high": 8,
+     "low": 18,
+     "medium": 35
+    },
+    "violations": [
+     "band-critical"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:ac113f44122c671735c5c8a5fb5c60df"
+   }
+  },
+  {
+   "run": "reach/nodejs-goof",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "nodejs-goof"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 565,
+    "findings": 248,
+    "vulnerabilities_by_severity": {
+     "critical": 38,
+     "high": 103,
+     "low": 14,
+     "medium": 79
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:dc3989ab1a0b65b43c3b5edd9464434c"
+   }
+  },
+  {
+   "run": "reach/nodejs-goof_dev",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--include-dev",
+    "nodejs-goof"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 980,
+    "findings": 329,
+    "vulnerabilities_by_severity": {
+     "critical": 46,
+     "high": 138,
+     "low": 26,
+     "medium": 105
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve",
+     "exploited-in-runtime"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:df683d545aa39e2c67f72817404b3d6c"
+   }
+  },
+  {
+   "run": "reach/nodejs-goof_vex",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "--vex",
+    "reproduce/vex/nodejs-goof.openvex.json",
+    "nodejs-goof"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 565,
+    "findings": 248,
+    "vulnerabilities_by_severity": {
+     "critical": 22,
+     "high": 72,
+     "low": 12,
+     "medium": 49
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:dc3989ab1a0b65b43c3b5edd9464434c"
+   }
+  },
+  {
+   "run": "reach/pygoat",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 196,
+    "vulnerabilities_by_severity": {
+     "critical": 14,
+     "high": 81,
+     "low": 18,
+     "medium": 75
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:104506b707cdad3dc6184ca82c8dbea6"
+   }
+  },
+  {
+   "run": "reach/pygoat_dev",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--include-dev",
+    "pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 196,
+    "vulnerabilities_by_severity": {
+     "critical": 14,
+     "high": 81,
+     "low": 18,
+     "medium": 75
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:6b493a77cb7a0e54929f74e15438f5d9"
+   }
+  },
+  {
+   "run": "reach/pygoat_vex",
+   "used_in": "RQ3",
+   "what": "scope, reachability and VEX",
+   "cwd": "corpus/src",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--runtime-only",
+    "--reachability",
+    "--vex",
+    "reproduce/vex/pygoat.openvex.json",
+    "pygoat"
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 45,
+    "findings": 196,
+    "vulnerabilities_by_severity": {
+     "critical": 13,
+     "high": 71,
+     "low": 13,
+     "medium": 58
+    },
+    "violations": [
+     "band-critical",
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:104506b707cdad3dc6184ca82c8dbea6"
+   }
+  },
+  {
+   "run": "casestudy/main",
+   "used_in": "case study (4.4)",
+   "what": "acme-orders-api pipeline",
+   "cwd": "supply-chain-audit-demo (branch main)",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--policy",
+    ".ssca/policy.yaml",
+    "."
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "PASS",
+    "exit_code": 0,
+    "components": 102,
+    "findings": 8,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "low": 2,
+     "medium": 4
+    },
+    "violations": [],
+    "incomplete": 0,
+    "data_snapshot": "sha256:214135930ff6ccddfa0c845a461a1093"
+   }
+  },
+  {
+   "run": "casestudy/s1-unsigned-dependency",
+   "used_in": "case study (4.4)",
+   "what": "acme-orders-api pipeline",
+   "cwd": "supply-chain-audit-demo (branch s1-unsigned-dependency)",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--policy",
+    ".ssca/policy.yaml",
+    "."
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 99,
+    "findings": 45,
+    "vulnerabilities_by_severity": {
+     "high": 15,
+     "low": 3,
+     "medium": 25
+    },
+    "violations": [
+     "band-critical",
+     "provenance-regression",
+     "unsigned-artifact"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:1c0ae0e496e1c02994328646cd97565c"
+   }
+  },
+  {
+   "run": "casestudy/s2-critical-reachable-cve",
+   "used_in": "case study (4.4)",
+   "what": "acme-orders-api pipeline",
+   "cwd": "supply-chain-audit-demo (branch s2-critical-reachable-cve)",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--policy",
+    ".ssca/policy.yaml",
+    "."
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 103,
+    "findings": 11,
+    "vulnerabilities_by_severity": {
+     "critical": 2,
+     "high": 2,
+     "low": 2,
+     "medium": 5
+    },
+    "violations": [
+     "critical-reachable-cve"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:c7e4cd345b6435ebd547b2c48cefd4a0"
+   }
+  },
+  {
+   "run": "casestudy/s3-dependency-confusion",
+   "used_in": "case study (4.4)",
+   "what": "acme-orders-api pipeline",
+   "cwd": "supply-chain-audit-demo (branch s3-dependency-confusion)",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--policy",
+    ".ssca/policy.yaml",
+    "."
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 103,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "low": 2,
+     "medium": 4
+    },
+    "violations": [
+     "band-critical",
+     "dependency-confusion"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:2f8b842d20246de95766aa2ca8b52c7e"
+   }
+  },
+  {
+   "run": "casestudy/s4-compromised-dev-tool",
+   "used_in": "case study (4.4)",
+   "what": "acme-orders-api pipeline",
+   "cwd": "supply-chain-audit-demo (branch s4-compromised-dev-tool)",
+   "command": [
+    "ssca",
+    "scan",
+    "--offline",
+    "--now=2026-11-06T12:00:00Z",
+    "--policy",
+    ".ssca/policy.yaml",
+    "."
+   ],
+   "snapshot": "ssca-snapshot-2026-11-06.tar.gz (directory ssca/)",
+   "expected": {
+    "verdict": "FAIL",
+    "exit_code": 1,
+    "components": 103,
+    "findings": 9,
+    "vulnerabilities_by_severity": {
+     "high": 2,
+     "low": 2,
+     "medium": 4
+    },
+    "violations": [
+     "band-critical",
+     "known-malicious"
+    ],
+    "incomplete": 0,
+    "data_snapshot": "sha256:7f6c9e3dad2a7f4b19d1f01dc441e104"
+   }
+  }
+ ]
+}

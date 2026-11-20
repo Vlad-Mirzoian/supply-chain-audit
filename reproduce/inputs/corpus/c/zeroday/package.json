@@ -1,0 +1,19 @@
+{
+ "name": "zeroday-demo",
+ "version": "1.0.0",
+ "dependencies": {
+  "loadsh": "4.17.22",
+  "crossenv": "7.0.4",
+  "httpkit-client": "2.6.1",
+  "colorlog-lite": "1.4.3",
+  "acme-billing-core": "99.0.1",
+  "event-utils-lite": "99.10.0",
+  "lodash": "4.17.21",
+  "debug": "4.3.7",
+  "ms": "2.1.3"
+ },
+ "devDependencies": {
+  "eslint-config-tidy": "10.1.6",
+  "eslint-plugin-tidy": "4.2.2"
+ }
+}

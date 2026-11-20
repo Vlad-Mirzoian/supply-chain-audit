@@ -1,0 +1,28 @@
+version: 1
+thresholds:
+  fail_on_band: critical
+  warn_on_band: high
+  incomplete_analysis: warn
+internal:
+  names: [acme-billing-core, acme-auth]
+  scopes: ["@acme"]
+  registry: https://npm.acme.internal/
+rules:
+  - id: known-malicious
+    when: vuln.id startswith 'MAL-'
+    action: fail
+  - id: dependency-confusion
+    when: signals.dependency_confusion == true
+    action: fail
+  - id: provenance-regression
+    when: signals.provenance_regression == true and (signals.publisher_changed == true or signals.install_script_added == true or signals.young_new_dependency == true)
+    action: fail
+  - id: provenance-missing
+    when: signals.provenance_regression == true and signals.publisher_changed != true and signals.install_script_added != true and signals.young_new_dependency != true
+    action: warn
+  - id: typosquat
+    when: signals.typosquat == true
+    action: fail
+  - id: cooldown
+    when: component.release_age_days < 7
+    action: warn
