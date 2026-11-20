@@ -266,8 +266,13 @@ does `verify-artifact`.
 (policy `trusted_builders`; an entry ending in `/` or `@` is a prefix). Default:
 the GitHub-hosted runners, the builder IDs of npm's SLSA v0.2 statements and
 the GitLab.com runners, never a runner that the Fulcio certificate calls
-self-hosted. Otherwise `scan` warns (`untrusted-builder`) and `verify-artifact`
-fails (`--builder` replaces the list).
+self-hosted. GitHub artifact attestations (`actions/attest-build-provenance`)
+name the building workflow as builder; by default they are trusted when the
+certificate states a GitHub-hosted runner and the builder is the workflow that
+signed the statement. Otherwise `scan` warns (`untrusted-builder`) and
+`verify-artifact` fails (`--builder` replaces the list, e.g.
+`--builder https://github.com/OWNER/REPO/.github/workflows/release.yml@` to
+trust only one workflow).
 
 ## Vulnerabilities and VEX
 

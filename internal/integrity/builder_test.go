@@ -57,3 +57,50 @@ func TestTrustedBuilder(t *testing.T) {
 		}
 	}
 }
+
+// A real GitHub artifact attestation (actions/attest-build-provenance, built
+// on a GitHub-hosted runner) names the workflow as its builder. It is trusted
+// by default because the certificate states a GitHub-hosted runner and the
+// builder is the signing workflow; a self-hosted runner, another builder than
+// the signer or a policy list without the workflow are not trusted.
+func TestTrustedGitHubArtifactAttestation(t *testing.T) {
+	tr, err := root.NewTrustedRootFromPath("../../testdata/sigstore/trusted_root-2026-11-06.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile("../../testdata/sigstore/acme-orders-api-1.4.0.tgz.sigstore.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := os.ReadFile("../../testdata/sigstore/acme-orders-api-1.4.0.tgz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := RepoIdentity("Vlad-Mirzoian/supply-chain-audit-demo")
+	res := VerifyBundle(tr, raw, "", nil, art, &id)
+	const wf = "https://github.com/Vlad-Mirzoian/supply-chain-audit-demo/.github/workflows/supply-chain.yml@refs/heads/main"
+	if !res.Verified || res.BuildType != GitHubWorkflowBuildType || res.BuilderID != wf || res.SignerSAN != wf || res.RunnerEnvironment != "github-hosted" {
+		t.Fatalf("verified %v build type %q builder %q signer %q runner %q error %q", res.Verified, res.BuildType, res.BuilderID, res.SignerSAN, res.RunnerEnvironment, res.Error)
+	}
+	if !Trusted(res, nil) {
+		t.Errorf("GitHub artifact attestation from a GitHub-hosted runner not trusted by default")
+	}
+	self := res
+	self.RunnerEnvironment = "self-hosted"
+	other := res
+	other.BuilderID = "https://github.com/evil/fork/.github/workflows/build.yml@refs/heads/main"
+	npmType := res
+	npmType.BuildType = "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1"
+	if Trusted(self, nil) || Trusted(other, nil) || Trusted(npmType, nil) {
+		t.Errorf("self-hosted %v, other builder %v, other build type %v: want all untrusted", Trusted(self, nil), Trusted(other, nil), Trusted(npmType, nil))
+	}
+	// a policy list replaces the default: only the listed workflow is trusted
+	if Trusted(res, []string{"https://builder.example/"}) || !Trusted(res, []string{"https://github.com/Vlad-Mirzoian/supply-chain-audit-demo/.github/workflows/supply-chain.yml@"}) {
+		t.Errorf("explicit builder list not applied")
+	}
+	// another repository is a different identity: the signature check fails
+	evil := RepoIdentity("evil/fork")
+	if r := VerifyBundle(tr, raw, "", nil, art, &evil); r.Verified {
+		t.Errorf("verified against another repository")
+	}
+}

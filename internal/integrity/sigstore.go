@@ -260,13 +260,29 @@ func TrustedBuilder(id string, list []string) bool {
 	return false
 }
 
+// GitHubWorkflowBuildType is the build type of GitHub artifact attestations
+// (actions/attest-build-provenance). Their builder ID is the workflow that
+// ran the build, e.g. https://github.com/OWNER/REPO/.github/workflows/
+// release.yml@refs/tags/v1.0.0, not the runner as in npm provenance.
+const GitHubWorkflowBuildType = "https://actions.github.io/buildtypes/workflow/v1"
+
 // Trusted judges a verified result: its builder must be trusted, and with
 // the default list a certificate that states a self-hosted GitHub runner is
 // not trusted either, whatever builder ID the statement names (the SLSA v0.2
 // statements of npm do not tell hosted and self-hosted runners apart).
+// With the default list a GitHub artifact attestation is trusted when the
+// Fulcio certificate of GitHub Actions states a GitHub-hosted runner and the
+// builder is the workflow that signed the statement: the build then ran on a
+// GitHub-hosted runner, as with the runner builder IDs of the list.
 func Trusted(r Result, list []string) bool {
-	if len(list) == 0 && r.RunnerEnvironment == "self-hosted" {
-		return false
+	if len(list) == 0 {
+		if r.RunnerEnvironment == "self-hosted" {
+			return false
+		}
+		if r.BuildType == GitHubWorkflowBuildType && r.Issuer == GitHubActions &&
+			r.RunnerEnvironment == "github-hosted" && r.BuilderID != "" && r.BuilderID == r.SignerSAN {
+			return true
+		}
 	}
 	return TrustedBuilder(r.BuilderID, list)
 }
