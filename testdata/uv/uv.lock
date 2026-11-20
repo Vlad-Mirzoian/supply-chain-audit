@@ -1,0 +1,19 @@
+version = 1
+[[package]]
+name = "demo"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [{ name = "requests" }]
+
+[[package]]
+name = "requests"
+version = "2.31.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [{ name = "urllib3" }]
+sdist = { url = "x", hash = "sha256:1111" }
+wheels = [{ url = "y", hash = "sha256:2222" }]
+
+[[package]]
+name = "urllib3"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }

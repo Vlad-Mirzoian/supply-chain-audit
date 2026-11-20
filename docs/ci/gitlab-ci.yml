@@ -1,0 +1,31 @@
+# GitLab CI template for ssca (NFR-04). Copy into .gitlab-ci.yml (or include it
+# as a local file). Set the CI/CD variables SSCA_URL (a pinned release of ssca)
+# and SSCA_SHA256 (its checksum); the job image is pinned to a digest
+# (debian:bookworm-slim, 11 Nov 2026) and should be updated deliberately.
+stages:
+  - audit
+
+supply-chain-audit:
+  stage: audit
+  image: debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+  variables:
+    SSCA_CACHE: "$CI_PROJECT_DIR/.ssca-cache"
+  cache:
+    # the data snapshot of ssca (registry metadata, advisories, POMs); ssca
+    # refreshes every entry older than 24 hours
+    key: ssca-snapshot
+    paths:
+      - .ssca-cache/
+    when: always
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq ca-certificates curl > /dev/null
+    - curl -sSfL -o /usr/local/bin/ssca "$SSCA_URL"
+    - echo "$SSCA_SHA256  /usr/local/bin/ssca" | sha256sum -c -
+    - chmod +x /usr/local/bin/ssca
+  script:
+    - ssca ci-audit .
+    - ssca scan --out ssca-out .
+  artifacts:
+    when: always
+    paths:
+      - ssca-out/   # reports, SARIF, SBOMs and the evidence bundle

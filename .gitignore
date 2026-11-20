@@ -1,0 +1,25 @@
+# Claude Code workspace
+.claude/
+
+# build output
+/ssca
+/ssca-bench
+/ssca-roc
+/dist/
+*.exe
+*.test
+
+# coverage and profiles
+*.out
+coverage.*
+*.prof
+
+# scan output and local data cache
+ssca-out/
+.cache/
+
+# editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
