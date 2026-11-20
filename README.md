@@ -1,5 +1,7 @@
 # ssca — software supply-chain auditing suite
 
+[![ci](https://github.com/Vlad-Mirzoian/supply-chain-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/Vlad-Mirzoian/supply-chain-audit/actions/workflows/ci.yml)
+
 `ssca` audits the dependencies and the CI configuration of npm, PyPI and Maven
 projects in one run. It builds the full transitive dependency graph, writes
 SBOMs, matches vulnerabilities, verifies hashes and Sigstore provenance, looks
@@ -37,6 +39,15 @@ Requires Go 1.27 or later.
 or from a clone of the repository:
 
     go build -o ssca ./cmd/ssca
+
+Prebuilt binaries for Linux, macOS and Windows are attached to the
+[releases](https://github.com/Vlad-Mirzoian/supply-chain-audit/releases),
+together with `SHA256SUMS` and SBOMs (SPDX, CycloneDX). Every binary has a
+SLSA build provenance and an SBOM attestation signed with Sigstore; verify a
+download with the GitHub CLI:
+
+    sha256sum -c SHA256SUMS --ignore-missing
+    gh attestation verify ssca_1.0.0_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
 
 ## Quick start
 
