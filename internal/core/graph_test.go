@@ -154,8 +154,17 @@ func TestMixedEcosystems(t *testing.T) {
 	if got := names(g); !eq(got, want) {
 		t.Fatalf("nodes %v, want %v", got, want)
 	}
-	if g.Root != "pkg:npm/old@0.1.0" {
-		t.Errorf("root %s", g.Root)
+	// the root is the project (the directory), not the npm package of its
+	// front end; the manifests give different versions, so it has none
+	if g.Root != "pkg:generic/mixed" || g.Nodes["pkg:npm/old@0.1.0"] != nil || g.Nodes[g.Root].Ecosystem != "generic" {
+		t.Errorf("root %s, old npm root still present: %v", g.Root, g.Nodes["pkg:npm/old@0.1.0"] != nil)
+	}
+	direct := map[string]bool{}
+	for _, e := range g.Out[g.Root] {
+		direct[e.To] = true
+	}
+	if !direct["pkg:pypi/requests@2.31.0"] || len(g.Out["pkg:npm/old@0.1.0"]) != 0 {
+		t.Errorf("edges of the root %v", g.Out[g.Root])
 	}
 	req := g.Nodes["pkg:pypi/requests@2.31.0"]
 	if !req.Direct || req.Depth != 1 || g.Nodes["pkg:pypi/urllib3@2.0.0"].Depth != 2 {

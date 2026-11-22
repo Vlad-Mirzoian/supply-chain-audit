@@ -121,8 +121,14 @@ type PackageMeta struct {
 	Supplier    string `json:"supplier,omitempty"`
 	SupplierOrg bool   `json:"supplier_org,omitempty"`
 	// RepoSHA1 is the SHA-1 published by the Maven repository next to the
-	// jar (only collected for sbom --enrich).
-	RepoSHA1           string    `json:"repo_sha1,omitempty"`
+	// jar (only collected for an SBOM, sbom without --no-enrich).
+	RepoSHA1 string `json:"repo_sha1,omitempty"`
+	// RepoSHA256 are the SHA-256 of the files of a PyPI release (wheels and
+	// sdist) as the PyPI Simple API publishes them; set only for an SBOM
+	// (sbom without --no-enrich). They describe the published files: unlike the
+	// hashes of a lockfile they are not checked by M3, which compares the
+	// lockfile with the registry.
+	RepoSHA256         []string  `json:"repo_sha256,omitempty"`
 	PublishedAt        time.Time `json:"published_at,omitempty"`
 	LatestReleaseAt    time.Time `json:"latest_release_at,omitempty"`
 	FirstReleaseAt     time.Time `json:"first_release_at,omitempty"`

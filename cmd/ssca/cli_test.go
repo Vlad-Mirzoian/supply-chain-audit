@@ -53,7 +53,11 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"scan", "--offline", "--vex", vexJust, empty}, exitUsage},
 		{[]string{"diff", "only-one.json"}, exitUsage},
 		{[]string{"scan", "--include-dev", "--runtime-only", empty}, exitUsage},
-		{[]string{"graph", "--include-dev", "--runtime-only", empty}, exitUsage},
+		{[]string{"graph", "--include-dev", empty}, exitUsage}, // --include-dev is a flag of scan only
+		{[]string{"sbom", "--include-dev", empty}, exitUsage},
+		{[]string{"verify-artifact", "--ecosystem", "npm", "x.tgz"}, exitUsage}, // no project flags
+		{[]string{"sbom", "--enrich", "--no-enrich", empty}, exitUsage},
+		{[]string{"sbom", "--no-enrich", "--validate", "x.json"}, exitUsage},
 		{[]string{"diff", "-h"}, exitOK},
 		{[]string{"verify-artifact", "-h"}, exitOK},
 		{[]string{"typosquat", "lodash"}, exitOK},
@@ -190,5 +194,37 @@ func TestCacheCommand(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "aa", "x.json"), []byte("not json"), 0o644)
 	if got := run([]string{"cache"}); got != exitIncomplete {
 		t.Errorf("damaged entry: exit %d, want %d", got, exitIncomplete)
+	}
+}
+
+// sbom warns when the npm or PyPI dependencies come without a lockfile: their
+// versions are resolved at the run and their hashes are not pinned. A
+// lockfile, or a requirements file that pins every hash, gives no warning;
+// Maven, which has no lockfile, gives none either.
+func TestUnlockedWarnings(t *testing.T) {
+	mk := func(inputs []string, comps ...*model.Component) *model.Graph {
+		g := model.NewGraph(model.NewComponent(model.PyPI, "", "app", "1.0"))
+		g.Inputs = inputs
+		for _, c := range comps {
+			g.AddNode(c)
+		}
+		return g
+	}
+	py := model.NewComponent(model.PyPI, "", "requests", "2.32.0")
+	pinned := model.NewComponent(model.PyPI, "", "idna", "3.10")
+	pinned.Integrity = []string{"sha256:" + strings.Repeat("a", 64)}
+	mvn := model.NewComponent(model.Maven, "org.x", "lib", "1.0")
+	if w := unlockedWarnings(mk([]string{"requirements.txt"}, py, pinned)); len(w) != 1 ||
+		!strings.Contains(w[0], "no lockfile for the PyPI dependencies: 1 package version is resolved") || !strings.Contains(w[0], "pip-compile --generate-hashes") {
+		t.Errorf("requirements without hashes: %v", w)
+	}
+	for name, g := range map[string]*model.Graph{
+		"uv.lock":       mk([]string{"pyproject.toml", "sub/uv.lock"}, py),
+		"pinned hashes": mk([]string{"requirements.txt"}, pinned),
+		"maven":         mk([]string{"pom.xml"}, mvn),
+	} {
+		if w := unlockedWarnings(g); len(w) != 0 {
+			t.Errorf("%s: unexpected warning %v", name, w)
+		}
 	}
 }

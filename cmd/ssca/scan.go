@@ -31,6 +31,7 @@ func (l *listFlag) Set(s string) error { *l = append(*l, s); return nil }
 func cmdScan(args []string) int {
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	g := addGlobal(fs)
+	g.addIncludeDev(fs)
 	policyPath := fs.String("policy", "", "policy file (default: .ssca/policy.yaml of the project if present,\nelse the built-in policy of Listing 3.1; \"builtin\" forces the built-in policy)")
 	out := fs.String("out", "ssca-out", "output directory for reports and the evidence bundle")
 	var vex listFlag

@@ -5,6 +5,8 @@ package core
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"path/filepath"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/common"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/maven"
@@ -22,10 +24,14 @@ var Plugins = []common.Plugin{npm.Plugin{}, pypi.Plugin{}, maven.Plugin{}}
 // of the ecosystems that were read. A directory with several ecosystems (an
 // npm front end next to a Python back end) gives one graph: the direct
 // dependencies of every ecosystem hang from the root of the first one, so that
-// no part of the project is silently left out of the audit.
+// no part of the project is silently left out of the audit. The root of such a
+// graph is the project itself, not the package of one ecosystem: a generic
+// component named after the directory (pkg:generic/NAME), with the version that
+// all manifests state, if they agree.
 func BuildGraph(ctx context.Context, dir, eco string, opt common.Options) (*model.Graph, []string, error) {
 	var g *model.Graph
 	var ecos []string
+	var roots []*model.Component
 	for _, p := range Plugins {
 		if eco != "" && p.Name() != eco {
 			continue
@@ -38,6 +44,7 @@ func BuildGraph(ctx context.Context, dir, eco string, opt common.Options) (*mode
 			return nil, nil, fmt.Errorf("%s: %w", p.Name(), err)
 		}
 		ecos = append(ecos, p.Name())
+		roots = append(roots, pg.Nodes[pg.Root])
 		if g == nil {
 			g = pg
 			continue
@@ -48,6 +55,7 @@ func BuildGraph(ctx context.Context, dir, eco string, opt common.Options) (*mode
 		return nil, nil, fmt.Errorf("no supported project files in %s", dir)
 	}
 	if len(ecos) > 1 {
+		reroot(g, projectRoot(dir, roots))
 		g.ComputeDepths()
 	}
 	sccs := graph.Tarjan(g)
@@ -80,4 +88,48 @@ func Merge(g, other *model.Graph) {
 	g.Notes = append(g.Notes, other.Notes...)
 	g.Inputs = append(g.Inputs, other.Inputs...)
 	g.Repositories = append(g.Repositories, other.Repositories...)
+}
+
+// projectRoot is the root component of a project with several ecosystems.
+func projectRoot(dir string, roots []*model.Component) *model.Component {
+	name := filepath.Base(dir)
+	if abs, err := filepath.Abs(dir); err == nil {
+		name = filepath.Base(abs)
+	}
+	version := roots[0].Version
+	for _, r := range roots[1:] {
+		if r.Version != version {
+			version = ""
+		}
+	}
+	c := model.NewComponent("generic", "", name, version)
+	c.PURL = model.MakePURL("generic", "", url.PathEscape(name), version)
+	return c
+}
+
+// reroot makes root the root of g in place of the root of its first
+// ecosystem: the edges of the old root start at the new one.
+func reroot(g *model.Graph, root *model.Component) {
+	old := g.Root
+	if old == root.PURL {
+		return
+	}
+	if o := g.Nodes[old]; o != nil {
+		root.Scope, root.Depth = o.Scope, o.Depth
+	}
+	delete(g.Nodes, old)
+	g.Nodes[root.PURL] = root
+	for _, e := range g.Out[old] {
+		e.From = root.PURL
+		g.Out[root.PURL] = append(g.Out[root.PURL], e)
+	}
+	delete(g.Out, old)
+	for from, es := range g.Out {
+		for i := range es {
+			if es[i].To == old {
+				g.Out[from][i].To = root.PURL
+			}
+		}
+	}
+	g.Root = root.PURL
 }

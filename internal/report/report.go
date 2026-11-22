@@ -23,9 +23,13 @@ import (
 
 // Report is the complete result of one scan.
 type Report struct {
-	Tool        string             `json:"tool"`
-	Version     string             `json:"version"`
-	Started     time.Time          `json:"started"`
+	Tool    string    `json:"tool"`
+	Version string    `json:"version"`
+	Started time.Time `json:"started"`
+	// EvaluatedAt is the evaluation time: the time against which release
+	// ages, VEX statements and policy exceptions are judged (--now in a
+	// reproducible run, else the start of the run).
+	EvaluatedAt time.Time          `json:"evaluated_at"`
 	DurationSec float64            `json:"duration_seconds"`
 	Stages      map[string]float64 `json:"stage_seconds"`
 	Project     Project            `json:"project"`
@@ -247,8 +251,8 @@ func (r *Report) Markdown() string {
 	var b strings.Builder
 	icon := map[string]string{"PASS": "✅", "FAIL": "❌", "INCOMPLETE": "⚠️"}[r.Decision.Verdict]
 	fmt.Fprintf(&b, "## %s ssca supply-chain audit: %s\n\n", icon, r.Decision.Verdict)
-	fmt.Fprintf(&b, "Project `%s` (%s), %d components (%d direct, max depth %d), scanned in %.1f s. Data snapshot `%s`.\n\n",
-		r.Project.Root, r.Project.Ecosystem, r.Stats.Components, r.Stats.Direct, r.Stats.MaxDepth, r.DurationSec, r.Snapshot)
+	fmt.Fprintf(&b, "Project %s (%s), %d components (%d direct, max depth %d), scanned in %.1f s. Data snapshot `%s`.\n\n",
+		code(r.Project.Root), r.Project.Ecosystem, r.Stats.Components, r.Stats.Direct, r.Stats.MaxDepth, r.DurationSec, r.Snapshot)
 	if r.TrustedRootCopy != nil {
 		fmt.Fprintf(&b, "Sigstore trusted root: %s (--offline, not refreshed through TUF).\n\n", r.TrustedRootCopy)
 	}
@@ -263,7 +267,7 @@ func (r *Report) Markdown() string {
 	if len(r.Decision.Violations) > 0 {
 		b.WriteString("\n### Policy violations (build blocked)\n\n| Rule | Component | Finding | Message |\n|---|---|---|---|\n")
 		for _, v := range r.Decision.Violations {
-			fmt.Fprintf(&b, "| %s | `%s` | %s | %s |\n", ruleName(v), v.Component, v.Finding, esc(v.Message))
+			fmt.Fprintf(&b, "| %s | %s | %s | %s |\n", esc(ruleName(v)), code(v.Component), esc(v.Finding), esc(v.Message))
 		}
 	}
 	if len(r.Decision.Warnings) > 0 {
@@ -273,7 +277,7 @@ func (r *Report) Markdown() string {
 				fmt.Fprintf(&b, "- … %d more\n", len(r.Decision.Warnings)-15)
 				break
 			}
-			fmt.Fprintf(&b, "- **%s** `%s` %s\n", v.Rule, v.Component, esc(v.Message))
+			fmt.Fprintf(&b, "- **%s** %s %s\n", esc(v.Rule), code(v.Component), esc(v.Message))
 		}
 	}
 	if len(r.TopDirect) > 0 {
@@ -282,18 +286,18 @@ func (r *Report) Markdown() string {
 			if i == 5 || s.Subtree < 25 {
 				break
 			}
-			fmt.Fprintf(&b, "| `%s` | %.1f | %s |\n", s.PURL, s.Subtree, strings.Join(s.WorstPath, " → "))
+			fmt.Fprintf(&b, "| %s | %.1f | %s |\n", code(s.PURL), s.Subtree, esc(strings.Join(s.WorstPath, " → ")))
 		}
 	}
 	b.WriteString(r.devMarkdown())
 	if len(r.CRA) > 0 {
 		b.WriteString("\n### CRA Article 14 candidates (actively exploited)\n\n")
 		for _, c := range r.CRA {
-			fmt.Fprintf(&b, "- `%s` %s (%s), reachable: %s\n", c.Component, c.Vuln, c.CVEs, c.Reachable)
+			fmt.Fprintf(&b, "- %s %s (%s), reachable: %s\n", code(c.Component), esc(c.Vuln), esc(c.CVEs), esc(c.Reachable))
 		}
 	}
 	for _, s := range CompactIncomplete(r.Incomplete, 5) {
-		fmt.Fprintf(&b, "\n> incomplete: %s", s)
+		fmt.Fprintf(&b, "\n> incomplete: %s", esc(s))
 	}
 	b.WriteString("\n")
 	return b.String()
@@ -379,7 +383,7 @@ func (r *Report) devMarkdown() string {
 				fmt.Fprintf(&b, "| | … %d more | | |\n", len(d.Findings)-15)
 				break
 			}
-			fmt.Fprintf(&b, "| %s | %s | `%s` | %s |\n", f.Severity, f.ID, f.Component, esc(f.Title))
+			fmt.Fprintf(&b, "| %s | %s | %s | %s |\n", f.Severity, esc(f.ID), code(f.Component), esc(f.Title))
 		}
 	}
 	if len(d.Scores) > 0 {
@@ -396,7 +400,7 @@ func (r *Report) devMarkdown() string {
 			if s.Override != "" {
 				sig = append(sig, s.Override)
 			}
-			fmt.Fprintf(&b, "| `%s` | %s | %.1f | %s | %s |\n", s.PURL, s.Scope, s.CRS, s.Band, esc(strings.Join(sig, ", ")))
+			fmt.Fprintf(&b, "| %s | %s | %.1f | %s | %s |\n", code(s.PURL), s.Scope, s.CRS, s.Band, esc(strings.Join(sig, ", ")))
 		}
 	}
 	if len(d.Findings) == 0 && len(d.Scores) == 0 {
@@ -439,7 +443,24 @@ func (r *Report) HashSummary() string {
 	return s + "."
 }
 
-func esc(s string) string { return strings.ReplaceAll(strings.ReplaceAll(s, "|", "\\|"), "\n", " ") }
+// esc makes text safe for a cell of a Markdown table and for a list item of
+// the summary: a pipe would end the cell, a line break the row, and angle
+// brackets would let a package name or an advisory title insert HTML into the
+// job summary of the CI system.
+func esc(s string) string {
+	return mdText.Replace(s)
+}
+
+var mdText = strings.NewReplacer("|", "\\|", "\r\n", " ", "\n", " ", "\r", " ", "<", "&lt;", ">", "&gt;")
+
+// code is a value shown as inline code (purls, identifiers): inside a code
+// span HTML is not interpreted, but a pipe still ends a table cell and a
+// backtick would end the span, so the backticks are dropped.
+func code(s string) string {
+	return "`" + mdCode.Replace(s) + "`"
+}
+
+var mdCode = strings.NewReplacer("|", "\\|", "`", "", "\r\n", " ", "\n", " ", "\r", " ")
 
 // ---------------------------------------------------------------- HTML
 

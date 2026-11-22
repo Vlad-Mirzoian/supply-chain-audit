@@ -162,3 +162,59 @@ func TestSeveralFilesOfOneRelease(t *testing.T) {
 		}
 	}
 }
+
+// An SPDX document of ssca states its generation context in the creation
+// comment (SPDX 2.3 has no field for it), also next to the reasons of an
+// incomplete analysis, and reading it back gives both: the SPDX SBOM meets
+// the generation-context element as the CycloneDX one does.
+func TestSPDXGenerationContext(t *testing.T) {
+	g, d := fieldsDoc()
+	dir := t.TempDir()
+	for _, inc := range [][]string{nil, {"registry unavailable", "lockfile out of sync"}} {
+		g.Incomplete = inc
+		d = FromGraph(g, "test", time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC))
+		b, err := d.SPDX("app")
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := filepath.Join(dir, "s.spdx.json")
+		os.WriteFile(p, b, 0o644)
+		back, err := Read(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if back.Context != "pre-build" || back.Assess().Elements["generation_context"] != 1 {
+			t.Errorf("incomplete %v: context %q read back from %s", inc, back.Context, b)
+		}
+		if !slices.Equal(back.Incomplete, inc) && !(len(inc) == 0 && len(back.Incomplete) == 0) {
+			t.Errorf("incomplete reasons %v read back as %v", inc, back.Incomplete)
+		}
+	}
+}
+
+// Without lockfile hashes the SBOM records the SHA-256 that PyPI publishes for
+// the files of the release; lockfile hashes take precedence.
+func TestPyPIRegistryHashes(t *testing.T) {
+	root := model.NewComponent(model.PyPI, "", "app", "1.0")
+	g := model.NewGraph(root)
+	free := model.NewComponent(model.PyPI, "", "free", "2.0")
+	free.Meta = &model.PackageMeta{RepoSHA256: []string{"bb", "aa"}}
+	locked := model.NewComponent(model.PyPI, "", "locked", "3.0")
+	locked.Integrity = []string{"sha256:" + strings.Repeat("c", 64)}
+	locked.Meta = &model.PackageMeta{RepoSHA256: []string{"dd"}}
+	g.AddNode(free)
+	g.AddNode(locked)
+	d := FromGraph(g, "test", time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC))
+	for _, c := range d.Components {
+		switch c.Name {
+		case "free":
+			if !slices.Equal(c.Hashes["SHA-256"], []string{"aa", "bb"}) {
+				t.Errorf("registry hashes: %v", c.Hashes)
+			}
+		case "locked":
+			if slices.Contains(c.Hashes["SHA-256"], "dd") || len(c.Hashes["SHA-256"]) != 1 {
+				t.Errorf("lockfile hash replaced by the registry: %v", c.Hashes)
+			}
+		}
+	}
+}

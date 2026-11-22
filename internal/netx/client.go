@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -227,10 +228,14 @@ func (c *Client) do(ctx context.Context, k, method, u string, body []byte, accep
 	defer func() { <-s }()
 
 	var lastErr error
+	waited := false // the server said how long to wait (Retry-After)
 	for attempt := 0; attempt < 4; attempt++ {
-		if attempt > 0 {
-			time.Sleep(time.Duration(attempt*attempt) * 500 * time.Millisecond)
+		if attempt > 0 && !waited {
+			if err := sleep(ctx, time.Duration(attempt*attempt)*500*time.Millisecond); err != nil {
+				return nil, err
+			}
 		}
+		waited = false
 		req, err := http.NewRequestWithContext(ctx, method, u, bytes.NewReader(body))
 		if err != nil {
 			return nil, err
@@ -264,7 +269,11 @@ func (c *Client) do(ctx context.Context, k, method, u string, body []byte, accep
 			return nil, ErrNotFound
 		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
 			lastErr = fmt.Errorf("%s: HTTP %d", u, resp.StatusCode)
-			time.Sleep(2 * time.Second)
+			d, given := retryDelay(resp.Header.Get("Retry-After"), time.Now())
+			if err := sleep(ctx, d); err != nil {
+				return nil, err
+			}
+			waited = given
 			continue
 		case resp.StatusCode >= 300:
 			return nil, fmt.Errorf("%s: HTTP %d", u, resp.StatusCode)
@@ -274,6 +283,48 @@ func (c *Client) do(ctx context.Context, k, method, u string, body []byte, accep
 		return b, nil
 	}
 	return nil, lastErr
+}
+
+// MaxRetryAfter caps the wait that a server asks for with Retry-After, so that
+// a misbehaving server cannot stall a run.
+var MaxRetryAfter = 60 * time.Second
+
+// defaultRetryDelay is the wait after HTTP 429 or 5xx without Retry-After.
+const defaultRetryDelay = 2 * time.Second
+
+// retryDelay is the wait before the next attempt after HTTP 429 or 5xx: the
+// Retry-After header (seconds or an HTTP date, RFC 9110 §10.2.3) when the
+// server sends one, capped at MaxRetryAfter, else defaultRetryDelay. given says
+// that the header was used.
+func retryDelay(h string, now time.Time) (d time.Duration, given bool) {
+	h = strings.TrimSpace(h)
+	if h == "" {
+		return defaultRetryDelay, false
+	}
+	if n, err := strconv.Atoi(h); err == nil && n >= 0 {
+		d = time.Duration(n) * time.Second
+	} else if t, err := http.ParseTime(h); err == nil {
+		d = max(t.Sub(now), 0)
+	} else {
+		return defaultRetryDelay, false
+	}
+	return min(d, MaxRetryAfter), true
+}
+
+// sleep waits for d or until ctx is done (a variable, so that tests do not
+// wait).
+var sleep = func(ctx context.Context, d time.Duration) error {
+	if d <= 0 {
+		return nil
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-t.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (c *Client) store(k, u string, status int, b []byte) {

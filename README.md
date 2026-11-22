@@ -50,7 +50,7 @@ SLSA build provenance and an SBOM attestation signed with Sigstore; verify a
 download with the GitHub CLI:
 
     sha256sum -c SHA256SUMS --ignore-missing
-    gh attestation verify ssca_1.0.1_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
+    gh attestation verify ssca_1.0.3_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
 
 ## Quick start
 
@@ -96,7 +96,7 @@ Other commands:
 |---|---|
 | `scan [dir]` | full audit with policy decision (M0–M6) |
 | `graph [dir]` | dependency graph summary, `--tree`, `--json` |
-| `sbom [dir]` | write SBOMs; `--enrich` adds suppliers and licenses; `--validate FILE` scores an SBOM against the CISA minimum elements |
+| `sbom [dir]` | write SBOMs with suppliers, licenses and hashes from the registries (`--no-enrich`: lockfile data only, no network); `--validate FILE` scores an SBOM against the CISA minimum elements |
 | `diff A B` | compare two SBOMs |
 | `typosquat NAME…` | check package names against popular packages, offline |
 | `ci-audit [dir]` | audit CI workflows and local actions |
@@ -179,6 +179,9 @@ SHA-256 manifest; a changed file then stops an offline run with exit code 4.
 - Online runs depend on public services (OSV.dev, deps.dev, the registries).
   When one of them cannot be reached the result is incomplete (exit code 2),
   not a pass.
+- `ssca typosquat` checks names against the dictionary only; the check inside
+  `scan` also dismisses a match for an established package (years of release
+  history), so `typosquat` can name a package that `scan` accepts.
 - It is a research prototype: interfaces and report formats may change.
 
 ## Development

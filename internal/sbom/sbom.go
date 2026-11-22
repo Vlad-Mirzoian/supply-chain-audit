@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -92,8 +93,14 @@ func FromGraph(g *model.Graph, tool string, now time.Time) *Doc {
 		}
 		if c.Meta != nil {
 			cp.Supplier, cp.SupplierOrg = c.Meta.Supplier, c.Meta.SupplierOrg
-			if c.Meta.RepoSHA1 != "" && len(cp.Hashes) == 0 {
-				cp.addHash("SHA-1", c.Meta.RepoSHA1)
+			// hashes published by the registry, when the lockfile records none
+			if len(cp.Hashes) == 0 {
+				if c.Meta.RepoSHA1 != "" {
+					cp.addHash("SHA-1", c.Meta.RepoSHA1)
+				}
+				for _, h := range c.Meta.RepoSHA256 {
+					cp.addHash("SHA-256", h)
+				}
 			}
 		}
 		d.Components = append(d.Components, cp)
@@ -368,10 +375,18 @@ func (d *Doc) SPDX(rootName string) ([]byte, error) {
 		}
 	}
 	ci := map[string]any{"created": d.Timestamp, "creators": []string{"Tool: ssca-" + d.Tool, "Organization: " + d.Author}}
+	// SPDX 2.3 has no field for the generation context (CycloneDX
+	// lifecycles) or for completeness; the creation comment is the place for
+	// information about how the document was made
+	var comment []string
+	if d.Context != "" {
+		comment = append(comment, spdxContext+d.Context+".")
+	}
 	if len(d.Incomplete) > 0 {
-		// SPDX 2.3 has no completeness field; the creation comment is the
-		// place for information about how the document was made
-		ci["comment"] = spdxIncomplete + strings.Join(d.Incomplete, "; ")
+		comment = append(comment, spdxIncomplete+strings.Join(d.Incomplete, "; "))
+	}
+	if len(comment) > 0 {
+		ci["comment"] = strings.Join(comment, " ")
 	}
 	out := map[string]any{
 		"spdxVersion": "SPDX-2.3", "dataLicense": "CC0-1.0", "SPDXID": "SPDXRef-DOCUMENT",
@@ -382,9 +397,18 @@ func (d *Doc) SPDX(rootName string) ([]byte, error) {
 	return json.MarshalIndent(out, "", "  ")
 }
 
-// spdxIncomplete starts the creation comment of an SPDX document that was
-// made from an incomplete analysis; Read recognises it.
+// spdxIncomplete starts the part of the creation comment of an SPDX document
+// that was made from an incomplete analysis; Read recognises it. It is the
+// last part of the comment, so the reasons run to its end.
 const spdxIncomplete = "Incomplete analysis, components may be missing: "
+
+// spdxContext starts the generation context in the creation comment of an
+// SPDX document ("Generation context: pre-build."), the lifecycle phase of
+// CycloneDX: pre-build for an SBOM made from lockfiles and manifests.
+const spdxContext = "Generation context: "
+
+// spdxContextRe reads the generation context of a creation comment.
+var spdxContextRe = regexp.MustCompile(`Generation context: ([a-z-]+)`)
 
 func uuidFrom(s string) string {
 	h := sha256.Sum256([]byte(s))
@@ -589,8 +613,11 @@ func readSPDX(b []byte) (*Doc, error) {
 		return nil, err
 	}
 	d := &Doc{Format: x.SPDXVersion, Timestamp: x.CreationInfo.Created}
-	if r, ok := strings.CutPrefix(x.CreationInfo.Comment, spdxIncomplete); ok {
-		d.Incomplete = strings.Split(r, "; ")
+	if i := strings.Index(x.CreationInfo.Comment, spdxIncomplete); i >= 0 {
+		d.Incomplete = strings.Split(x.CreationInfo.Comment[i+len(spdxIncomplete):], "; ")
+	}
+	if m := spdxContextRe.FindStringSubmatch(x.CreationInfo.Comment); m != nil {
+		d.Context = m[1]
 	}
 	for _, c := range x.CreationInfo.Creators {
 		if strings.HasPrefix(c, "Tool:") {

@@ -29,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.0.2"
+var Version = "1.0.3"
 
 type global struct {
 	cacheDir string
@@ -69,7 +69,9 @@ func init() {
 	}
 }
 
-func addGlobal(fs *flag.FlagSet) *global {
+// addNet registers the flags of the data sources: the cache / data snapshot
+// and offline mode (every command that reads registry or Sigstore data).
+func addNet(fs *flag.FlagSet) *global {
 	g := &global{}
 	def := os.Getenv("SSCA_CACHE")
 	if def == "" {
@@ -79,11 +81,23 @@ func addGlobal(fs *flag.FlagSet) *global {
 	}
 	fs.StringVar(&g.cacheDir, "cache", def, "metadata cache / data snapshot directory")
 	fs.BoolVar(&g.offline, "offline", false, "use only the cached data snapshot (no network)")
+	return g
+}
+
+// addGlobal registers the flags of the commands that build the dependency
+// graph of a project directory (scan, graph, sbom).
+func addGlobal(fs *flag.FlagSet) *global {
+	g := addNet(fs)
 	fs.StringVar(&g.eco, "ecosystem", "", "force ecosystem: npm, pypi or maven")
-	fs.BoolVar(&g.dev, "include-dev", false, "also report vulnerabilities of development and test dependencies\n(they are always checked for known-malicious versions, integrity and malicious-package indicators)")
 	fs.BoolVar(&g.runtime, "runtime-only", false, "analyse runtime dependencies only: development and test dependencies\nare left out of the graph, the SBOM and all checks")
 	fs.BoolVar(&g.resolve, "resolve", false, "ignore lockfiles and resolve from manifests")
 	return g
+}
+
+// addIncludeDev registers --include-dev, which only scan has: it concerns
+// the vulnerabilities that the scan reports.
+func (g *global) addIncludeDev(fs *flag.FlagSet) {
+	fs.BoolVar(&g.dev, "include-dev", false, "also report vulnerabilities of development and test dependencies\n(they are always checked for known-malicious versions, integrity and malicious-package indicators)")
 }
 
 // parseArgs parses the flags of a subcommand; -h prints its usage and ends

@@ -86,14 +86,35 @@ reason of incompleteness (an unresolved npm optional dependency is a note).
 
 ### sbom
 
-    ssca sbom [--out DIR] [--enrich] [dir]
+    ssca sbom [--out DIR] [--no-enrich] [dir]
     ssca sbom --validate FILE [--min-score N] [--json]
 
-Writes CycloneDX 1.6 and SPDX 2.3 documents. Without `--enrich` the SBOM holds
-what the lockfile records; `--enrich` adds suppliers, missing licenses and
-Maven jar checksums from the registries (with `--offline` from the data
-snapshot; what is not there stays empty). The supplier is written only when the
-package metadata declares one. All hashes recorded by the lockfile are kept.
+Writes CycloneDX 1.6 and SPDX 2.3 documents with the CISA minimum elements. By
+default the SBOM is enriched from the registries, with the same metadata as a
+`scan`: suppliers, licenses, the SHA-1 that Maven Central publishes next to a
+jar and, for PyPI packages without a lockfile hash, the SHA-256 of every file
+of the release as the PyPI Simple API lists it (with `--offline` from the data
+snapshot; what is not there stays empty). `--no-enrich` writes only what the
+lockfiles and manifests record and needs no network: fast, but without
+suppliers and licenses, and without hashes for projects that have no lockfile,
+so that `--validate` rejects most such SBOMs. (`--enrich` is still accepted; it
+is the default.) The supplier is written only when the package metadata
+declares one. All hashes recorded by the lockfile are kept; hashes from the
+registry are used only when the lockfile records none, and only in the SBOM:
+the integrity check (M3) compares the lockfile with the registry.
+
+When the npm or PyPI dependencies come without a lockfile (`requirements.txt`,
+`pyproject.toml`, `package.json` alone, or `--resolve`), `sbom` warns: their
+versions are resolved at the time of the run and their hashes are not pinned by
+the project. A lockfile pins both (`uv lock`, `poetry lock`,
+`pip-compile --generate-hashes`, `npm install --package-lock-only`); a
+requirements file that pins every package with `--hash` counts as locked. Maven
+has no lockfile and is not named.
+
+In SPDX 2.3, which has no field for it, the generation context (the CycloneDX
+lifecycle phase, `pre-build` for an SBOM made from lockfiles and manifests) is
+stated in the creation comment ("Generation context: pre-build."), next to the
+reasons of an incomplete analysis.
 
 `--validate` scores an existing SBOM (of any tool) against the 11 CISA minimum
 elements and decides: exit code 2 if the SBOM states that it is incomplete (the
@@ -199,6 +220,9 @@ Policy rules can test `component.production` (runtime, optional or provided).
 
 A directory with several ecosystems (e.g. package.json next to pyproject.toml)
 is audited as one project; `--ecosystem` restricts the audit to one of them.
+The root of such a project is the project itself, a generic component named
+after the directory (`pkg:generic/NAME`, with the version that all manifests
+state if they agree), not the package of one of its ecosystems.
 `--resolve` ignores lockfiles and resolves versions from the manifests.
 
 A lockfile must lock every dependency it is meant to lock; otherwise it is out
@@ -400,7 +424,10 @@ Every response of a data source is cached on disk (default `$SSCA_CACHE`, else
 the user cache directory, e.g. `~/.cache/ssca`). An online run reuses cached
 responses younger than 24 h (`SSCA_CACHE_TTL`, a Go duration, changes this);
 `--offline` uses only the cache and never goes to the network, so a run can be
-repeated exactly from the same data snapshot.
+repeated exactly from the same data snapshot. A request that a server rejects
+with HTTP 429 or 5xx is retried up to three times; when the server says how
+long to wait (`Retry-After`, seconds or a date), ssca waits that long, at most
+60 s.
 
 `ssca cache [--cache DIR] [--json]` shows the state of a cache directory: the
 responses per data source, how many an online run would reuse, their dates and
@@ -429,7 +456,8 @@ online runs refresh the cache and ignore the seal.
 
 Each scan removes the outputs of an earlier run from `--out` before writing the
 new ones, so `manifest.json` covers every ssca file in the directory. With
-`--now` the manifest and the generated VEX document carry that time, and two
+`--now` the manifest, the generated VEX document and `report.json`
+(`evaluated_at`) carry that time, and two
 runs over the same data snapshot give the same findings, scores, worst paths
 and decision (only timings and the network cache counters may differ).
 

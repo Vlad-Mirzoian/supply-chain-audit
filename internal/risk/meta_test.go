@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -260,5 +261,42 @@ func TestDepsDevUnavailableHistoryFromRegistry(t *testing.T) {
 	p := model.NewComponent(model.PyPI, "", "other", "1.0.0")
 	if pm := NewCollector(netx.New("", false), now).collectOne(context.Background(), p); len(pm.Unavailable) != 0 {
 		t.Errorf("unavailable %v for packages that the sources do not know", pm.Unavailable)
+	}
+}
+
+// For an SBOM the collector records the SHA-256 of every file of the PyPI
+// release from the Simple API page it reads anyway (no further request); a
+// scan, which does not ask for artifact hashes, records none.
+func TestPyPIArtifactHashes(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/simple/pkg/":
+			json.NewEncoder(w).Encode(map[string]any{"name": "pkg", "files": []map[string]any{
+				{"filename": "pkg-1.0-py3-none-any.whl", "hashes": map[string]string{"sha256": "AA11"}, "upload-time": "2026-01-01T00:00:00Z"},
+				{"filename": "pkg-1.0.tar.gz", "hashes": map[string]string{"sha256": "bb22"}, "upload-time": "2026-01-01T00:00:00Z"},
+				{"filename": "pkg-0.9-py3-none-any.whl", "hashes": map[string]string{"sha256": "cc33"}, "upload-time": "2025-01-01T00:00:00Z"},
+			}})
+		case "/pypi/pkg/1.0/json", "/pypi/pkg/0.9/json":
+			json.NewEncoder(w).Encode(map[string]any{"info": map[string]any{"name": "pkg"}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	oldDD, oldIndex := DepsDev, pypi.Index
+	DepsDev, pypi.Index = srv.URL+"/dd", srv.URL
+	defer func() { DepsDev, pypi.Index = oldDD, oldIndex }()
+	for _, sbom := range []bool{false, true} {
+		c := model.NewComponent(model.PyPI, "", "pkg", "1.0")
+		col := NewCollector(netx.New("", false), time.Date(2026, 11, 22, 0, 0, 0, 0, time.UTC))
+		col.ArtifactHashes = sbom
+		col.Collect(context.Background(), []*model.Component{c})
+		want := []string(nil)
+		if sbom {
+			want = []string{"aa11", "bb22"} // both files of 1.0, not the one of 0.9
+		}
+		if !slices.Equal(c.Meta.RepoSHA256, want) {
+			t.Errorf("artifact hashes %v: %v, want %v", sbom, c.Meta.RepoSHA256, want)
+		}
 	}
 }

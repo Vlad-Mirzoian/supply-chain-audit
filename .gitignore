@@ -23,3 +23,6 @@ ssca-out/
 .vscode/
 *.swp
 .DS_Store
+
+# Python bytecode of the reproduce scripts
+__pycache__/

@@ -21,7 +21,7 @@ import (
 // the expected signer identity; a missing bundle is an unsigned artifact.
 func cmdVerifyArtifact(args []string) int {
 	fset := flag.NewFlagSet("verify-artifact", flag.ContinueOnError)
-	g := addGlobal(fset)
+	g := addNet(fset)
 	bundlePath := fset.String("bundle", "", "Sigstore bundle (default: <artifact>.sigstore.json)")
 	repo := fset.String("repo", "", "expected GitHub repository owner/name of the signing workflow")
 	digest := fset.String("sha512", "", "verify against this hex SHA-512 digest instead of the file")

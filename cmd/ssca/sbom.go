@@ -11,10 +11,12 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/core"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/risk"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/sbom"
 )
@@ -24,7 +26,8 @@ func cmdSBOM(args []string) int {
 	g := addGlobal(fs)
 	out := fs.String("out", ".", "output directory")
 	validate := fs.String("validate", "", "assess an existing SBOM against the CISA minimum elements instead")
-	enrich := fs.Bool("enrich", false, "add suppliers, missing licenses and Maven jar checksums from the registries\n(with --offline from the data snapshot; what is not there stays empty)")
+	fs.Bool("enrich", false, "kept for compatibility: the SBOM is enriched by default (see --no-enrich)")
+	noEnrich := fs.Bool("no-enrich", false, "write only what the lockfiles and manifests record: no suppliers, licenses or\nregistry hashes (Maven jar SHA-1, SHA-256 of the PyPI files); without them most\nSBOMs miss CISA minimum elements. By default these are taken from the registries\n(with --offline from the data snapshot; what is not there stays empty)")
 	asJSON := fs.Bool("json", false, "with --validate: print the assessment as JSON")
 	minScore := fs.Float64("min-score", defaultMinScore, "with --validate: lowest acceptable CISA score in percent; below it the exit code is 1")
 	if code, ok := parseArgs(fs, args); !ok {
@@ -38,8 +41,14 @@ func cmdSBOM(args []string) int {
 		fmt.Fprintln(os.Stderr, "error: --min-score applies only to --validate")
 		return exitUsage
 	}
-	if *validate != "" && *enrich {
-		fmt.Fprintln(os.Stderr, "error: --enrich applies only to generating an SBOM, not to --validate")
+	set := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	if set["enrich"] && set["no-enrich"] {
+		fmt.Fprintln(os.Stderr, "error: --enrich and --no-enrich exclude each other")
+		return exitUsage
+	}
+	if *validate != "" && (set["enrich"] || set["no-enrich"]) {
+		fmt.Fprintln(os.Stderr, "error: --enrich and --no-enrich apply only to generating an SBOM, not to --validate")
 		return exitUsage
 	}
 	if strings.HasPrefix(*validate, "-") {
@@ -75,7 +84,7 @@ func cmdSBOM(args []string) int {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return exitIncomplete
 	}
-	if *enrich {
+	if !*noEnrich {
 		col := risk.NewCollector(g.client(), time.Now())
 		col.ArtifactHashes = true
 		col.Collect(context.Background(), gr.Components())
@@ -105,7 +114,53 @@ func cmdSBOM(args []string) int {
 	fmt.Printf("%s written to %s: sbom.cdx.json (CycloneDX 1.6), sbom.spdx.json (SPDX 2.3)%s\n",
 		count(len(doc.Components), "component"), *out, incompleteMark(gr.Incomplete))
 	printIncomplete(os.Stdout, g, gr.Incomplete)
+	for _, w := range unlockedWarnings(gr) {
+		fmt.Println("warning:", w)
+	}
 	return graphExit(gr)
+}
+
+// lockfiles are the files that pin the versions and hashes of an ecosystem.
+var lockfiles = map[string][]string{
+	model.NPM:  {"package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml"},
+	model.PyPI: {"uv.lock", "poetry.lock", "Pipfile.lock"},
+}
+
+// unlockedWarnings names the ecosystems of a graph whose dependencies come
+// from manifests without a lockfile (or were resolved with --resolve): their
+// versions are resolved at the time of the run and their hashes are not
+// pinned by the project, so the SBOM can only record the hashes that the
+// registry publishes. A requirements file that pins every package with
+// --hash counts as locked. Maven has no lockfile and is not named.
+func unlockedWarnings(gr *model.Graph) []string {
+	locked := map[string]bool{}
+	for _, in := range gr.Inputs {
+		for eco, names := range lockfiles {
+			if slices.Contains(names, filepath.Base(in)) {
+				locked[eco] = true
+			}
+		}
+	}
+	unpinned := map[string]int{}
+	for _, c := range gr.Components() {
+		if _, ok := lockfiles[c.Ecosystem]; ok && len(c.Integrity) == 0 {
+			unpinned[c.Ecosystem]++
+		}
+	}
+	advice := map[string]string{
+		model.NPM:  "npm install --package-lock-only",
+		model.PyPI: "uv lock, poetry lock or pip-compile --generate-hashes",
+	}
+	label := map[string]string{model.NPM: "npm", model.PyPI: "PyPI"}
+	var out []string
+	for _, eco := range []string{model.NPM, model.PyPI} {
+		if unpinned[eco] > 0 && !locked[eco] {
+			out = append(out, fmt.Sprintf("no lockfile for the %s dependencies: %s resolved at this run, not pinned by the project, "+
+				"and the SBOM can only record the hashes that the registry publishes; pin versions and hashes with a lockfile (%s)",
+				label[eco], count(unpinned[eco], "package version is", "package versions are"), advice[eco]))
+		}
+	}
+	return out
 }
 
 // defaultMinScore is the lowest CISA score (percent) that sbom --validate

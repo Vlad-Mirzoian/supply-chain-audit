@@ -14,6 +14,7 @@ import (
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/integrity"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/policy"
 )
 
 // The evidence bundle must cover every file in the output directory: files of
@@ -194,5 +195,31 @@ func TestTrustedRootCopyInReports(t *testing.T) {
 	h, err := r.HTML()
 	if err != nil || !strings.Contains(string(h), want) {
 		t.Errorf("HTML (%v): %s", err, h)
+	}
+}
+
+// Text from packages and advisories cannot break the tables of summary.md or
+// insert HTML into a CI job summary: pipes and line breaks are escaped, angle
+// brackets become entities, and backticks cannot end a code span.
+func TestMarkdownEscaping(t *testing.T) {
+	r := &Report{Project: Project{Root: "pkg:npm/app@1.0.0"}}
+	r.Decision.Violations = []policy.Violation{{Rule: "band-critical", Component: "pkg:npm/a%7Cb@1.0.0|x`y",
+		Finding: "GHSA-1|2", Message: "<img src=x onerror=alert(1)> line\nbreak | pipe"}}
+	md := r.Markdown()
+	if strings.Contains(md, "<img") || !strings.Contains(md, "&lt;img src=x onerror=alert(1)&gt;") {
+		t.Errorf("HTML not escaped:\n%s", md)
+	}
+	var row string
+	for _, l := range strings.Split(md, "\n") {
+		if strings.HasPrefix(l, "| band-critical") {
+			row = l
+		}
+	}
+	// the row keeps its 4 cells: every pipe of the text is escaped
+	if n := strings.Count(row, "|") - strings.Count(row, `\|`); n != 5 {
+		t.Errorf("row has %d unescaped pipes, want 5: %s", n, row)
+	}
+	if !strings.Contains(row, "`pkg:npm/a%7Cb@1.0.0\\|xy`") || strings.Contains(md, "line\nbreak") {
+		t.Errorf("code span or line break: %s", row)
 	}
 }

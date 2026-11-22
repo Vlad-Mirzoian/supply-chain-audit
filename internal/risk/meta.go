@@ -29,8 +29,10 @@ type Collector struct {
 	Net       *netx.Client
 	Now       time.Time
 	Downloads bool // query download counts (npm only)
-	// ArtifactHashes also fetches the checksums that the Maven repository
-	// publishes next to the jars (sbom --enrich).
+	// ArtifactHashes also records the checksums that the registries publish
+	// for the files of a release, for the SBOM: the SHA-1 next to a Maven jar
+	// (one more request) and the SHA-256 of the PyPI files (from the Simple API
+	// page that is read anyway).
 	ArtifactHashes bool
 	npm            *npm.RegistryClient
 	maven          *maven.Repo
@@ -394,6 +396,10 @@ func (c *Collector) pypiMeta(ctx context.Context, comp *model.Component, m *mode
 	prov := map[string]bool{}
 	for _, f := range sp.Files {
 		v := pypi.VersionFromFilename(sp.Name, f.Filename)
+		if c.ArtifactHashes && v == comp.Version && f.Hashes["sha256"] != "" {
+			// every file of the release is a valid form of the component
+			m.RepoSHA256 = append(m.RepoSHA256, strings.ToLower(f.Hashes["sha256"]))
+		}
 		if strings.HasSuffix(f.Filename, ".whl") {
 			hasWheel[v] = true
 		}

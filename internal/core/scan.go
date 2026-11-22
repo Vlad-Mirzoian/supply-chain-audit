@@ -103,7 +103,7 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 		stages[name] = d
 		stagesMu.Unlock()
 	}
-	r := &report.Report{Tool: "ssca", Version: o.Version, Started: start.UTC(), Stages: stages, Counters: map[string]int{}}
+	r := &report.Report{Tool: "ssca", Version: o.Version, Started: start.UTC(), EvaluatedAt: o.Now.UTC(), Stages: stages, Counters: map[string]int{}}
 
 	// M0
 	t0 := time.Now()

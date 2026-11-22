@@ -121,6 +121,10 @@ func TestScanEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// report.json records the evaluation time (--now), not only the manifest
+	if !rep.EvaluatedAt.Equal(time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("evaluated_at %v", rep.EvaluatedAt)
+	}
 	// the development dependency t is part of the graph and of the SBOM
 	// ... and so is the extraneous entry stale, which npm ci installs and M3 reports
 	if rep.Stats.Components != 8 || len(doc.Components) != 8 || rep.Stats.ByScope["dev"] != 1 {
