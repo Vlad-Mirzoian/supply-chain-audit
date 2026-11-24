@@ -264,3 +264,85 @@ func TestPythonPackageSources(t *testing.T) {
 		t.Errorf("findings %q, want %q", strings.Join(got, "|"), want)
 	}
 }
+
+// A package that the policy requires to have provenance must not be reported
+// as unsigned when the data that says whether it has an attestation is
+// missing (offline snapshot without it, registry outage): before, axios was
+// reported as "no provenance attestation" and the build failed with
+// unsigned-artifact although its release is signed. Without metadata the
+// attestation endpoint is asked directly: a 404 still means unsigned, any
+// other failure leaves the provenance unchecked (incomplete analysis).
+func TestRequiredProvenanceWithoutMetadata(t *testing.T) {
+	cache := t.TempDir()
+	b, err := os.ReadFile(filepath.Join("..", "..", "testdata", "sigstore", "trusted_root-2026-11-06.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(cache, "sigstore-trusted_root.json"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/-/npm/v1/attestations/axios@1.0.0":
+			http.Error(w, "forbidden", http.StatusForbidden)
+		default:
+			http.NotFound(w, r) // no attestation for any other version
+		}
+	}))
+	defer srv.Close()
+	old := npm.Registry
+	npm.Registry = srv.URL
+	defer func() { npm.Registry = old }()
+
+	sum := sha512.Sum512([]byte("axios"))
+	sri := "sha512-" + base64.StdEncoding.EncodeToString(sum[:])
+	expect := map[string]string{"axios": "github.com/axios/axios"}
+	check := func(offline bool, version string, meta *model.PackageMeta) ([]*model.Finding, *Result) {
+		v := &Verifier{Net: netx.New(t.TempDir(), offline), Trust: &Trust{CacheDir: cache, Offline: true},
+			Provenance: true, Expect: expect}
+		c := model.NewComponent(model.NPM, "", "axios", version)
+		c.Integrity, c.Meta = []string{sri}, meta
+		fs, r, _ := v.checkOne(context.Background(), c)
+		var prov []*model.Finding
+		for _, f := range fs {
+			if f.Kind == model.KindProvenance {
+				prov = append(prov, f)
+			}
+		}
+		return prov, r
+	}
+	noRegistry := &model.PackageMeta{Unavailable: []string{"npm registry: not in offline snapshot: x"}}
+
+	// offline, registry metadata and attestation missing from the snapshot
+	if fs, r := check(true, "1.0.0", noRegistry); len(fs) != 0 || r == nil || !r.Unavailable {
+		t.Errorf("offline without metadata: findings %v, result %+v; want unchecked", fs, r)
+	}
+	// metadata not collected at all, attestation endpoint fails
+	if fs, r := check(false, "1.0.0", nil); len(fs) != 0 || r == nil || !r.Unavailable {
+		t.Errorf("no metadata, registry error: findings %v, result %+v; want unchecked", fs, r)
+	}
+	// metadata unavailable, but the registry answers that there is no attestation
+	if fs, r := check(false, "1.0.1", noRegistry); len(fs) != 1 || fs[0].Rule != "unsigned-artifact" || r == nil || r.Unavailable {
+		t.Errorf("no metadata, attestation 404: findings %v, result %+v; want unsigned-artifact", fs, r)
+	}
+	// metadata read and without attestation: unsigned, as before
+	if fs, r := check(true, "1.0.0", &model.PackageMeta{}); len(fs) != 1 || fs[0].Rule != "unsigned-artifact" || r != nil {
+		t.Errorf("metadata without attestation: findings %v, result %+v; want unsigned-artifact", fs, r)
+	}
+}
+
+// The same for PyPI: when the package index cannot be read, a package with
+// required provenance is unchecked, not unsigned.
+func TestRequiredPyPIProvenanceIndexUnavailable(t *testing.T) {
+	v := &Verifier{Net: netx.New(t.TempDir(), true), Provenance: true, Expect: map[string]string{"demo": "github.com/x/demo"}}
+	c := model.NewComponent(model.PyPI, "", "demo", "1.0")
+	fs, r, h := v.checkOne(context.Background(), c)
+	if len(fs) != 0 || r == nil || !r.Unavailable || h.Status != HashUnavailable {
+		t.Errorf("findings %v, result %+v, hash %s; want unchecked provenance", fs, r, h.Status)
+	}
+	// without a provenance requirement nothing is added
+	v.Expect = nil
+	if _, r, _ := v.checkOne(context.Background(), c); r != nil {
+		t.Errorf("provenance result without requirement: %+v", r)
+	}
+}

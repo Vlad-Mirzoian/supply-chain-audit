@@ -54,3 +54,30 @@ func TestCompactIncompleteNoTrustedRoot(t *testing.T) {
 		t.Errorf("got %q", out)
 	}
 }
+
+// The folded line names packages, not URL fragments: before, an offline run
+// of the case study printed "querybatch, accepts), 1.3.8), 1.3.8, 6.0.2",
+// taking the closing parenthesis and the version from the URLs. Reasons that
+// cover a whole data source stay separate lines.
+func TestCompactIncompleteNames(t *testing.T) {
+	in := []string{
+		"vulnerability data: OSV querybatch: not in offline snapshot: https://api.osv.dev/v1/querybatch",
+		"package metadata from deps.dev unavailable for 102 of 102 components (not in offline snapshot: https://api.deps.dev/v3/systems/npm/packages/accepts)",
+		"lockfile hash of pkg:npm/accepts@1.3.8 could not be checked: not in offline snapshot: https://registry.npmjs.org/accepts/1.3.8",
+		"lockfile hash of pkg:npm/%40acme/billing@2.0.0 could not be checked: not in offline snapshot: https://registry.npmjs.org/@acme%2fbilling/2.0.0",
+		"provenance of pkg:npm/axios@1.21.0 could not be checked: attestations: not in offline snapshot: https://registry.npmjs.org/-/npm/v1/attestations/axios@1.21.0",
+		"lockfile hash of pkg:pypi/django@4.2 could not be checked: not in offline snapshot: https://pypi.org/simple/django/",
+		"widget (not in offline snapshot: https://example.org/x/widget)",
+	}
+	out := CompactIncomplete(in, 10)
+	want := []string{
+		"5 items are not in the offline snapshot: accepts@1.3.8, @acme/billing@2.0.0, axios@1.21.0, django@4.2, widget (run without --offline to fetch them, or use a data snapshot that holds them)",
+		in[0], in[1],
+	}
+	if strings.Join(out, "\n") != strings.Join(want, "\n") {
+		t.Errorf("got\n%s\nwant\n%s", strings.Join(out, "\n"), strings.Join(want, "\n"))
+	}
+	if got := purlName("pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1?type=jar"); got != "org.apache.logging.log4j:log4j-core@2.14.1" {
+		t.Errorf("maven purl %q", got)
+	}
+}

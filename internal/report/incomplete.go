@@ -7,7 +7,13 @@ import (
 )
 
 var (
-	offlineRe  = regexp.MustCompile(`not in offline snapshot: (\S+)$`)
+	offlineRe = regexp.MustCompile(`not in offline snapshot: ([^\s)]+)\)?$`)
+	// reasons about one component, named by its package URL
+	purlRe = regexp.MustCompile(`^(?:lockfile hash|provenance) of (pkg:\S+) could not be checked`)
+	// reasons that cover a whole data source, not one item: they are kept as
+	// separate lines, because folding them would name a single example
+	// package (or "querybatch") as if only that one were missing
+	sourceRe   = regexp.MustCompile(`^(?:vulnerability data: |package metadata from .+ unavailable for \d+ of \d+ components)`)
 	metaForRe  = regexp.MustCompile(`^metadata for (\S+) unavailable`)
 	requiredRe = regexp.MustCompile(`^(\S+) "[^"]*" \(required by`)
 	pomRe      = regexp.MustCompile(`POM ([^:\s]+):([^:\s]+):([^:\s]+): not in offline snapshot`)
@@ -36,7 +42,7 @@ func CompactIncomplete(list []string, show int) []string {
 			continue
 		}
 		m := offlineRe.FindStringSubmatch(s)
-		if m == nil {
+		if m == nil || sourceRe.MatchString(s) {
 			out = append(out, s)
 			continue
 		}
@@ -76,10 +82,31 @@ func offlineItem(reason, url string) string {
 	if m := pomRe.FindStringSubmatch(reason); m != nil { // parent POM or BOM
 		return m[1] + ":" + m[2] + "@" + m[3]
 	}
+	if m := purlRe.FindStringSubmatch(reason); m != nil {
+		return purlName(m[1])
+	}
 	if i := strings.LastIndex(strings.TrimSuffix(url, "/"), "/"); i >= 0 {
 		return strings.TrimSuffix(url, "/")[i+1:]
 	}
 	return url
+}
+
+// purlName is the readable name of a package URL: name@version, with the
+// Maven group as group:artifact@version.
+func purlName(purl string) string {
+	s := strings.TrimPrefix(purl, "pkg:")
+	typ, rest, ok := strings.Cut(s, "/")
+	if !ok {
+		return purl
+	}
+	if i := strings.IndexAny(rest, "?#"); i >= 0 {
+		rest = rest[:i]
+	}
+	rest = strings.ReplaceAll(rest, "%40", "@")
+	if typ == "maven" {
+		rest = strings.Replace(rest, "/", ":", 1)
+	}
+	return rest
 }
 
 func plural(n int, one, many string) string {

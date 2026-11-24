@@ -40,8 +40,8 @@ Compared are the decision and exit code, the number of components and findings, 
 severity, the violated rules, the reasons of an incomplete analysis and the data snapshot ID (except for the two
 NFR-01 runs, whose stored report is the first of three cold runs while the archived snapshot is the cache left by
 the last one; the note in `expected.json` says so). The stored runs were
-made with ssca 1.0.0; releases 1.0.2 and 1.0.3 give the same results on all 83 runs (`replay.py`, 20 and 22 November
-2026).
+made with ssca 1.0.0; releases 1.0.2, 1.0.3 and 1.0.4 give the same results on all 83 runs (`replay.py`, 20, 22 and
+24 November 2026).
 
 ## Steps
 

@@ -50,7 +50,7 @@ SLSA build provenance and an SBOM attestation signed with Sigstore; verify a
 download with the GitHub CLI:
 
     sha256sum -c SHA256SUMS --ignore-missing
-    gh attestation verify ssca_1.0.3_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
+    gh attestation verify ssca_1.0.4_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
 
 ## Quick start
 
@@ -124,7 +124,6 @@ Without `--policy`, `scan` uses `.ssca/policy.yaml` of the project if it exists
 and the built-in policy otherwise. A minimal project policy:
 
 ```yaml
-version: 1
 thresholds:
   fail_on_band: critical
   warn_on_band: high

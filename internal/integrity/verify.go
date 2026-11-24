@@ -210,7 +210,19 @@ func (v *Verifier) checkOne(ctx context.Context, c *model.Component) ([]*model.F
 		var fs []*model.Finding
 		fs, h = v.npmHash(ctx, c)
 		out = append(out, fs...)
-		if v.Provenance && c.Meta != nil && c.Meta.HasProvenance {
+		switch {
+		case !v.Provenance:
+		case c.Meta != nil && c.Meta.HasProvenance:
+			r := v.npmProvenance(ctx, c)
+			res = &r
+		case v.expects(c) && !npmMetaRead(c):
+			// the policy requires provenance, but the registry metadata that
+			// says whether this version has an attestation was not read
+			// (missing from the offline snapshot, registry outage, metadata
+			// not collected): ask the attestation endpoint directly. A 404
+			// means that there is none; any other error leaves the
+			// provenance unchecked, which makes the analysis incomplete
+			// instead of reporting the package as unsigned.
 			r := v.npmProvenance(ctx, c)
 			res = &r
 		}
@@ -218,6 +230,11 @@ func (v *Verifier) checkOne(ctx context.Context, c *model.Component) ([]*model.F
 		var fs []*model.Finding
 		fs, res, h = v.pypiCheck(ctx, c)
 		out = append(out, fs...)
+		if res == nil && h.Status == HashUnavailable && v.Provenance && v.expects(c) {
+			// the package index (which lists the attestations) could not be
+			// read, so it is unknown whether this release has provenance
+			res = &Result{Error: "package index: " + h.Error, Unavailable: true}
+		}
 	}
 	if c.Extraneous {
 		// npm ci installs every entry of package-lock.json, also one that no
@@ -285,6 +302,28 @@ func (v *Verifier) checkOne(ctx context.Context, c *model.Component) ([]*model.F
 		})
 	}
 	return out, res, h
+}
+
+// expects reports whether the policy requires provenance for the package
+// (require_provenance).
+func (v *Verifier) expects(c *model.Component) bool {
+	_, ok := v.Expect[c.FullName()]
+	return ok
+}
+
+// npmMetaRead reports whether the npm registry metadata of the component was
+// read, so that Meta.HasProvenance says whether the version has an
+// attestation (a version that the registry does not know counts as read).
+func npmMetaRead(c *model.Component) bool {
+	if c.Meta == nil {
+		return false
+	}
+	for _, u := range c.Meta.Unavailable {
+		if strings.HasPrefix(u, "npm registry: ") {
+			return false
+		}
+	}
+	return true
 }
 
 // fetchFailed classifies a download error. An attestation that the registry

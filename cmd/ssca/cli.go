@@ -29,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.0.3"
+var Version = "1.0.4"
 
 type global struct {
 	cacheDir string
