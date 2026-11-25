@@ -1,7 +1,7 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://ssca.local/vex/sha256:fe732554b746814f7db086c36dd48e2f",
-  "author": "ssca 0.9.0-dev (automated, requires review)",
+  "@id": "https://ssca.local/vex/sha256:044e135091de506a01b60e4b03578e2b",
+  "author": "ssca 1.0.5 (automated, requires review)",
   "statements": [
     {
       "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
@@ -228,6 +228,22 @@
           "CVE-2024-4068"
         ],
         "name": "GHSA-grv7-fg5c-xmjg"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/decode-uri-component@0.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-118664"
+        ],
+        "name": "GHSA-qr28-fpjm-wq7f"
       }
     },
     {
@@ -856,6 +872,6 @@
       }
     }
   ],
-  "timestamp": "2026-11-06T12:00:00Z",
+  "timestamp": "2026-11-25T00:00:00Z",
   "version": 1
 }

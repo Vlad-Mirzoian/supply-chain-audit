@@ -1,7 +1,7 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://ssca.local/vex/sha256:dc3989ab1a0b65b43c3b5edd9464434c",
-  "author": "ssca 0.9.0-dev (automated, requires review)",
+  "@id": "https://ssca.local/vex/sha256:ee24bab5f834ed162f73f4316cdf8cee",
+  "author": "ssca 1.0.5 (automated, requires review)",
   "statements": [
     {
       "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
@@ -325,6 +325,22 @@
           "CVE-2024-21538"
         ],
         "name": "GHSA-3xgq-45jj-v275"
+      }
+    },
+    {
+      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:npm/decode-uri-component@0.2.0"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "aliases": [
+          "CVE-2026-118664"
+        ],
+        "name": "GHSA-qr28-fpjm-wq7f"
       }
     },
     {
@@ -975,22 +991,6 @@
       "status": "not_affected",
       "vulnerability": {
         "aliases": [
-          "CVE-2026-2950"
-        ],
-        "name": "GHSA-f23m-r3pf-42rh"
-      }
-    },
-    {
-      "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
-      "justification": "vulnerable_code_not_in_execute_path",
-      "products": [
-        {
-          "@id": "pkg:npm/lodash@4.17.10"
-        }
-      ],
-      "status": "not_affected",
-      "vulnerability": {
-        "aliases": [
           "CVE-2019-1010266",
           "SNYK-JS-LODASH-73639"
         ],
@@ -1267,6 +1267,6 @@
       }
     }
   ],
-  "timestamp": "2026-11-06T12:00:00Z",
+  "timestamp": "2026-11-25T00:00:00Z",
   "version": 1
 }

@@ -1,9 +1,9 @@
 # Reproducing the experiments of the thesis
 
 The evaluation of ssca in the master's thesis *A Study of Security and Transparency Issues in Software Supply
-Chains* (Section 4) is based on 83 stored ssca runs. Each of them can be repeated **offline** and gives the
-same result as in the thesis, because every run reads its data (advisories, registry metadata, POMs, EPSS,
-KEV, the Sigstore trusted root) only from a frozen *data snapshot*.
+Chains* (Section 4) is based on 84 stored ssca runs. All data they use (advisories, registry metadata, POMs, EPSS,
+KEV, the Sigstore trusted root) was collected on one day, 25 November 2026, into one *data snapshot*, which was
+then sealed. Each run can be repeated **offline** on that snapshot and gives the same result as in the thesis.
 
 This folder contains what is needed to repeat them:
 
@@ -19,29 +19,28 @@ This folder contains what is needed to repeat them:
 
 ## What is reproduced
 
-| Thesis result | Runs (`expected.json`) | Data of |
-|---|---|---|
-| RQ1 inventory and transitive coverage, comparison with Trivy, Grype, OSV-Scanner | `a/*` (16) | 20 Nov 2026 |
-| RQ1 default mode, scan time (RQ6), calibration of the risk score | `a_default/*` (16) | 6–7 Nov 2026 |
-| Hold-out corpus (a′) | `a2/*` (10) | 10–11 Nov 2026 |
-| RQ2 precision and recall, Log4Shell cases | `b/*` (15) | 20 Nov 2026 |
-| Pipfile.lock projects | `d/*` (2) | 10 Nov 2026 |
-| RQ3 scope, reachability and VEX filtering | `reach/*` (12) | 6 Nov 2026 |
-| RQ4 known malicious versions (runtime and development dependencies) | `c/*` (2), `c2/*` (1) | 20 Nov / 6 Nov 2026 |
-| RQ4 fresh legitimate releases | `fresh/*` (2) | 10 Nov 2026 |
-| RQ6 NFR-01: two projects of about 5 000 components | `nfr01/*` (2) | 11 Nov 2026 |
-| Case study (CI/CD pipeline, Section 4.5) | `casestudy/*` (5) | 6 Nov 2026 |
+| Thesis result | Runs (`expected.json`) |
+|---|---|
+| RQ1 inventory and transitive coverage, comparison with Trivy, Grype, OSV-Scanner; default mode, scan time (RQ6), calibration of the risk score | `a/*` (16) |
+| RQ1 and RQ6 with `--runtime-only` | `a_runtime_only/*` (16) |
+| Hold-out corpus (a′) | `a2/*` (10) |
+| RQ2 precision and recall, Log4Shell cases | `b/*` (15) |
+| Pipfile.lock projects | `d/*` (2) |
+| RQ3 scope, reachability and VEX filtering | `reach/*` (12) |
+| RQ4 known malicious versions (runtime and development dependencies) | `c/*` (2), `c2/*` (2) |
+| RQ4 fresh legitimate releases (sample of 25 November 2026) | `fresh/*` (2) |
+| RQ6 NFR-01: two projects of about 5 000 components | `nfr01/*` (2) |
+| Case study (CI/CD pipeline, Section 4.5) | `casestudy/*` (5) |
+
+All runs use `--now=2026-11-25T00:00:00Z`.
 
 The case study is also published as a live demo:
 [supply-chain-audit-demo](https://github.com/Vlad-Mirzoian/supply-chain-audit-demo), where every attack
 scenario is a pull request that ssca blocks.
 
 Compared are the decision and exit code, the number of components and findings, the vulnerability findings per
-severity, the violated rules, the reasons of an incomplete analysis and the data snapshot ID (except for the two
-NFR-01 runs, whose stored report is the first of three cold runs while the archived snapshot is the cache left by
-the last one; the note in `expected.json` says so). The stored runs were
-made with ssca 1.0.0; releases 1.0.2, 1.0.3 and 1.0.4 give the same results on all 83 runs (`replay.py`, 20, 22 and
-24 November 2026).
+severity, the violated rules, the reasons of an incomplete analysis and the data snapshot ID. The stored results
+are those of ssca 1.0.5.
 
 ## Steps
 
@@ -55,46 +54,37 @@ in the README) or build it: `go build -o ssca ./cmd/ssca`.
 `--sources` also checks out the full source trees of the seven projects of the reachability runs. Every file is
 checked against the SHA-256 in `corpus.json`.
 
-**3. Data snapshots.** The snapshots are not in the repository (about 1.2 GB together) because they hold registry
-metadata of third-party packages, including the names and e-mail addresses of their maintainers. They are
-**available on request**: open an issue in this repository. Their SHA-256, which `replay.py` checks, are:
+**3. Data snapshot.** The snapshot is not in the repository because it holds registry metadata of third-party
+packages, including the names and e-mail addresses of their maintainers. It is **available on request**: open an
+issue in this repository. Its SHA-256, which `replay.py` checks:
 
 | Archive | Size | SHA-256 |
 |---|---|---|
-| ssca-snapshot-2026-11-20.tar.gz | 170 MB | `73524e534654b56aa7f1d68210570c6f46a9b371f70253a90faeed6d8c8f6cac` |
-| ssca-snapshot-2026-11-06.tar.gz | 221 MB | `ece87fb8b4c23c344d4bf55b26c7eae45f2d969fc1cf59ecd770b2b11d7cd827` |
-| ssca-snapshot-2026-11-07.tar.gz | 223 MB | `ef2ad989076f557162a70fb5f19604aa9d112cabdd13e2d325c7feecd1fb49de` |
-| ssca-snapshot-holdout-2026-11-10.tar.gz | 132 MB | `47acec550329e94c6dc0fc65f719796075574460cb43ec6b9683bc17cd7fbe3a` |
-| ssca-snapshot-holdout-2026-11-11.tar.gz | 132 MB | `10baddcb7403e545a922b5c5f8d79cab50c58be7da400fb041b998222797eef4` |
-| ssca-snapshot-holdout-mem0-2026-11-11.tar.gz | 132 MB | `646ce4b3aef420c4fa3f0f3a97360cc7248738ac4f43527fee081c457eb80f13` |
-| ssca-snapshot-corpus-d-2026-11-10.tar.gz | 35 MB | `7aa0a0c745e1778236158a14995f376d520ba216212f2994d5694769857ba354` |
-| ssca-snapshot-fresh-2026-11-10.tar.gz | 66 MB | `298f845eceef57bd3e96b29dbd95f08d611ffbad73b06b9086af863371043730` |
-| ssca-snapshot-nfr01-joplin-2026-11-11.tar.gz | 37 MB | `ee540eb09cdd9c5401f336fae4633a9bf5a9a80ccc5ad067f69358d14e9887d4` |
-| ssca-snapshot-nfr01-novu-2026-11-11.tar.gz | 47 MB | `c0255a4852939d5233d3f01ba58b1c0abe9a850837f91b4e6b0ffd72b13358ef` |
+| ssca-snapshot-2026-11-25.tar.gz | 402 MB | `cb643ef42ed3ca03407ab7aa86060342a6243a1548ab2ff968aa1ac5f25978e9` |
 
-The snapshot of 20 November 2026 is also sealed (`ssca cache seal`, seal
-`sha256:9d68e7002e8bfba52929659f7f85c930`): an offline run on it stops with exit code 4 if any file was changed.
+The snapshot is sealed (`ssca cache seal`, seal `sha256:186cb252091b7c7047a4acb21ec9007e`): an offline run on it
+stops with exit code 4 if any file was changed.
 
-**4. Replay.** Put the archives into one directory and run:
+**4. Replay.** Put the archive into a directory and run:
 
     python3 reproduce/replay.py --ssca ./ssca --snapshots snapshots/ --work work/
 
 Each run prints `same` or the fields that differ; `--only a/` restricts the replay to some runs. A single run can
 also be repeated by hand with the command, working directory and snapshot given in `expected.json`, for example:
 
-    SSCA_CACHE=snapshots/ssca-snapshot-2026-11-20 ssca scan --offline --now=<time> --out out corpus/a/NodeGoat
+    SSCA_CACHE=snapshots/ssca-snapshot-2026-11-25 ssca scan --offline --now=2026-11-25T00:00:00Z --out out corpus/a/NodeGoat
     python3 reproduce/check.py a/NodeGoat out/report.json
 
 ## Other tools and analysis
 
-The comparison runs of 20 November 2026 used Trivy 0.76.1, Grype 0.121.0 with Syft 1.55.0 and OSV-Scanner 2.7.0
-with their default options and pinned databases: the Trivy database of 2026-11-20 (UpdatedAt 18:59:53 UTC), the
-Grype database v6.1.10 built 2026-11-20 (archive checksum
-`sha256:6866d1685025e6001d422fb4be59f26feebacb151b3ff77b012d999e12b9af24`), and the OSV exports of npm, PyPI and
-Maven of the same day, which OSV-Scanner read with `--offline-vulnerabilities`. The ground truth was taken from the
-package managers of the projects (`mvn dependency:list`, `pip install --dry-run --report` with
-`--uploaded-prior-to 2026-11-20T21:59:00Z`, `npm ls`, `uv export`, Poetry, pnpm, yarn) and, for the advisories, from
-the OSV.dev query API on 20 November 2026. These databases, the raw outputs of the other tools, the ground truth and
+The comparison runs of 25 November 2026 used Trivy 0.76.1, Grype 0.121.0 with Syft 1.55.0 and OSV-Scanner 2.7.0
+with their default options and databases downloaded that day: the Trivy database UpdatedAt 2026-11-24 19:04:37 UTC,
+the Grype database v6.1.10 built 2026-11-24 (archive checksum
+`sha256:fdf0cdec0b112f6769c3fd38cd5f992a3bb6162a4ab2fe30d639d14ae41ea8a9`), and the OSV exports of npm and PyPI of
+24 November and Maven of 23 November (the latest at the download), which OSV-Scanner read with
+`--offline-vulnerabilities`. The ground truth was taken from the package managers of the projects
+(`mvn dependency:list`, `pip install --dry-run --report` with `--uploaded-prior-to 2026-11-25T01:04:28Z`, `npm ls`,
+`uv export`, Poetry, pnpm, yarn) and, for the advisories, from the OSV.dev query API on 25 November 2026. These databases, the raw outputs of the other tools, the ground truth and
 the analysis scripts that compute the tables of Section 4 are available on request as well.
 
 Not reproducible offline from the published material:

@@ -1301,14 +1301,14 @@
    "used_in": [
     "RQ4"
    ],
-   "path": "corpus/fresh/2026-11-10/npm",
+   "path": "corpus/fresh/2026-11-25/npm",
    "ecosystems": [
     "npm"
    ],
    "source": "included",
    "files": {
-    "package-lock.json": "171ef116264bc92bddd922c85e1c0bc0e000f0ff5638e80942e5e2a2525dd315",
-    "package.json": "6da57db13c43aa3147313546409b5425385e7c67a927b5fa417998fed4269639"
+    "package-lock.json": "c8f9b2e038ff1d1f4bed7bbd1012520525e0cde12ca4ede5e6d067ded01f736d",
+    "package.json": "3b13cd0cc648cce6ba99f4516b9d1ee95bdd4b104fd56ec2189428729f3a2176"
    }
   },
   {
@@ -1317,14 +1317,14 @@
    "used_in": [
     "RQ4"
    ],
-   "path": "corpus/fresh/2026-11-10/pypi",
+   "path": "corpus/fresh/2026-11-25/pypi",
    "ecosystems": [
     "pypi"
    ],
    "source": "included",
    "files": {
-    "pyproject.toml": "e23a507e7c63811fbd37976c0c411054d628419ecf61b2a308b4d0b8eaec009b",
-    "uv.lock": "7f0084241e41560ab16556f51bac469bc9270c26c75d0e754eb5c689505192bb"
+    "pyproject.toml": "2d909f50ad23cc95cb571c0c7a3124d30d871e771ccc2581f484f8649a83116d",
+    "uv.lock": "a9a93f85371f72191153e9ae8b98fc20fea031f3ed4167950c6812d4cae69ae5"
    }
   },
   {

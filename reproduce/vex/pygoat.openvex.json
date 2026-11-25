@@ -1,7 +1,7 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://ssca.local/vex/sha256:104506b707cdad3dc6184ca82c8dbea6",
-  "author": "ssca 0.9.0-dev (automated, requires review)",
+  "@id": "https://ssca.local/vex/sha256:05e1c6024255512bdcaa7fda67f2009e",
+  "author": "ssca 1.0.5 (automated, requires review)",
   "statements": [
     {
       "impact_statement": "package is not imported by the application or by any reachable dependency (ssca package-level reachability)",
@@ -549,6 +549,6 @@
       }
     }
   ],
-  "timestamp": "2026-11-06T12:00:00Z",
+  "timestamp": "2026-11-25T00:00:00Z",
   "version": 1
 }
