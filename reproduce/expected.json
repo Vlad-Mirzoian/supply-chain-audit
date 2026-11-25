@@ -2434,7 +2434,7 @@
   },
   {
    "run": "casestudy/main",
-   "used_in": "case study (4.4)",
+   "used_in": "case study (4.5)",
    "what": "acme-orders-api pipeline",
    "cwd": "supply-chain-audit-demo (branch main)",
    "command": [
@@ -2464,7 +2464,7 @@
   },
   {
    "run": "casestudy/s1-unsigned-dependency",
-   "used_in": "case study (4.4)",
+   "used_in": "case study (4.5)",
    "what": "acme-orders-api pipeline",
    "cwd": "supply-chain-audit-demo (branch s1-unsigned-dependency)",
    "command": [
@@ -2481,7 +2481,7 @@
     "verdict": "FAIL",
     "exit_code": 1,
     "components": 99,
-    "findings": 45,
+    "findings": 44,
     "vulnerabilities_by_severity": {
      "high": 15,
      "low": 3,
@@ -2489,8 +2489,7 @@
     },
     "violations": [
      "band-critical",
-     "provenance-regression",
-     "unsigned-artifact"
+     "provenance-regression"
     ],
     "incomplete": 0,
     "data_snapshot": "sha256:b8f93f64988933221da60320bce9f086"
@@ -2498,7 +2497,7 @@
   },
   {
    "run": "casestudy/s2-critical-reachable-cve",
-   "used_in": "case study (4.4)",
+   "used_in": "case study (4.5)",
    "what": "acme-orders-api pipeline",
    "cwd": "supply-chain-audit-demo (branch s2-critical-reachable-cve)",
    "command": [
@@ -2531,7 +2530,7 @@
   },
   {
    "run": "casestudy/s3-dependency-confusion",
-   "used_in": "case study (4.4)",
+   "used_in": "case study (4.5)",
    "what": "acme-orders-api pipeline",
    "cwd": "supply-chain-audit-demo (branch s3-dependency-confusion)",
    "command": [
@@ -2564,7 +2563,7 @@
   },
   {
    "run": "casestudy/s4-compromised-dev-tool",
-   "used_in": "case study (4.4)",
+   "used_in": "case study (4.5)",
    "what": "acme-orders-api pipeline",
    "cwd": "supply-chain-audit-demo (branch s4-compromised-dev-tool)",
    "command": [
