@@ -65,6 +65,10 @@ func cmdCache(args []string) int {
 		if sl != nil {
 			out["seal"] = sl.ID
 		}
+		if serr != nil {
+			// exit code 4 below: the reason must be in the JSON as well
+			out["seal_error"] = serr.Error()
+		}
 		printJSON(out)
 	} else {
 		printCache(os.Stdout, st, root)

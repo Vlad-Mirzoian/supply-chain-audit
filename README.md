@@ -50,7 +50,7 @@ SLSA build provenance and an SBOM attestation signed with Sigstore; verify a
 download with the GitHub CLI:
 
     sha256sum -c SHA256SUMS --ignore-missing
-    gh attestation verify ssca_1.0.5_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
+    gh attestation verify ssca_1.0.6_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
 
 ## Quick start
 
@@ -114,8 +114,8 @@ flags with `-h`; all details are in [docs/USAGE.md](docs/USAGE.md).
 |---|---|
 | 0 | passed |
 | 1 | policy violation: the build is blocked |
-| 2 | analysis incomplete (data missing, lockfile out of sync, …): never reported as a pass |
-| 3 | usage error: bad flag, invalid policy or VEX document |
+| 2 | analysis incomplete (data missing, lockfile out of sync, …): not reported as a pass unless the policy sets `incomplete_analysis: warn` |
+| 3 | usage error: bad or misplaced flag (flags go before the directory), wrong directory, invalid policy or VEX document |
 | 4 | self-check failure: a sealed data snapshot was modified |
 
 ## Policy

@@ -20,6 +20,10 @@ func cmdTyposquat(args []string) int {
 	if code, ok := parseArgs(fs, args); !ok {
 		return code
 	}
+	if *top < 0 {
+		fmt.Fprintln(os.Stderr, "error: --top must not be negative")
+		return exitUsage
+	}
 	if fs.NArg() == 0 {
 		fmt.Fprintln(os.Stderr, "usage: ssca typosquat [--ecosystem npm|pypi] [--top N] NAME...")
 		return exitUsage

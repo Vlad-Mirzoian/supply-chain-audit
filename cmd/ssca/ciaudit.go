@@ -20,9 +20,9 @@ func cmdCIAudit(args []string) int {
 	if code, ok := parseArgs(fs, args); !ok {
 		return code
 	}
-	dir := "."
-	if fs.NArg() > 0 {
-		dir = fs.Arg(0)
+	dir, ok := projectDir(fs)
+	if !ok {
+		return exitUsage
 	}
 	if st, err := os.Stat(dir); err != nil || !st.IsDir() {
 		fmt.Fprintf(os.Stderr, "error: %s is not a directory\n", dir)

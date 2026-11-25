@@ -37,12 +37,20 @@ func cmdSBOM(args []string) int {
 		fmt.Fprintf(os.Stderr, "error: --min-score %v is not a percentage from 0 to 100\n", *minScore)
 		return exitUsage
 	}
-	if *validate == "" && *minScore != defaultMinScore {
-		fmt.Fprintln(os.Stderr, "error: --min-score applies only to --validate")
+	if strings.HasPrefix(*validate, "-") {
+		fmt.Fprintf(os.Stderr, "error: --validate needs the SBOM file right after it, got %q (other flags go before --validate)\n", *validate)
 		return exitUsage
 	}
 	set := map[string]bool{}
 	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	if *validate == "" {
+		for _, f := range []string{"min-score", "json"} {
+			if set[f] {
+				fmt.Fprintf(os.Stderr, "error: --%s applies only to --validate\n", f)
+				return exitUsage
+			}
+		}
+	}
 	if set["enrich"] && set["no-enrich"] {
 		fmt.Fprintln(os.Stderr, "error: --enrich and --no-enrich exclude each other")
 		return exitUsage
@@ -51,9 +59,19 @@ func cmdSBOM(args []string) int {
 		fmt.Fprintln(os.Stderr, "error: --enrich and --no-enrich apply only to generating an SBOM, not to --validate")
 		return exitUsage
 	}
-	if strings.HasPrefix(*validate, "-") {
-		fmt.Fprintf(os.Stderr, "error: --validate needs the SBOM file right after it, got %q (other flags go before --validate)\n", *validate)
-		return exitUsage
+	if *validate != "" {
+		// these would be silently ignored: --validate reads a file and
+		// builds no graph
+		for _, f := range []string{"out", "ecosystem", "runtime-only", "resolve"} {
+			if set[f] {
+				fmt.Fprintf(os.Stderr, "error: --%s applies only to generating an SBOM, not to --validate\n", f)
+				return exitUsage
+			}
+		}
+		if fs.NArg() > 0 {
+			fmt.Fprintf(os.Stderr, "error: --validate assesses the file %s and takes no project directory (got %s)\n", *validate, strings.Join(fs.Args(), " "))
+			return exitUsage
+		}
 	}
 	if *validate != "" {
 		d, err := sbom.Read(*validate)
@@ -72,17 +90,14 @@ func cmdSBOM(args []string) int {
 		}
 		return code
 	}
-	dir := "."
-	if fs.NArg() > 0 {
-		dir = fs.Arg(0)
-	}
-	if !g.checkTarget(dir) {
+	dir, ok := projectDir(fs)
+	if !ok || !g.checkTarget(dir) {
 		return exitUsage
 	}
 	gr, _, err := core.BuildGraph(context.Background(), dir, g.eco, commonOptions(g))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
-		return exitIncomplete
+		return buildExit(err)
 	}
 	if !*noEnrich {
 		col := risk.NewCollector(g.client(), time.Now())
@@ -90,11 +105,10 @@ func cmdSBOM(args []string) int {
 		col.Collect(context.Background(), gr.Components())
 	}
 	doc := sbom.FromGraph(gr, Version, time.Now())
-	root := gr.Nodes[gr.Root]
-	cdx, err := doc.CycloneDX(root.FullName(), root.Version)
+	cdx, err := doc.CycloneDX(doc.RootName, doc.RootVersion)
 	var spdx []byte
 	if err == nil {
-		spdx, err = doc.SPDX(root.FullName())
+		spdx, err = doc.SPDX(doc.RootName)
 	}
 	if err == nil {
 		err = os.MkdirAll(*out, 0o755)
@@ -114,7 +128,7 @@ func cmdSBOM(args []string) int {
 	fmt.Printf("%s written to %s: sbom.cdx.json (CycloneDX 1.6), sbom.spdx.json (SPDX 2.3)%s\n",
 		count(len(doc.Components), "component"), *out, incompleteMark(gr.Incomplete))
 	printIncomplete(os.Stdout, g, gr.Incomplete)
-	for _, w := range unlockedWarnings(gr) {
+	for _, w := range unlockedWarnings(gr.Inputs, gr.Components(), ", and the SBOM can only record the hashes that the registry publishes") {
 		fmt.Println("warning:", w)
 	}
 	return graphExit(gr)
@@ -126,15 +140,20 @@ var lockfiles = map[string][]string{
 	model.PyPI: {"uv.lock", "poetry.lock", "Pipfile.lock"},
 }
 
-// unlockedWarnings names the ecosystems of a graph whose dependencies come
-// from manifests without a lockfile (or were resolved with --resolve): their
-// versions are resolved at the time of the run and their hashes are not
-// pinned by the project, so the SBOM can only record the hashes that the
-// registry publishes. A requirements file that pins every package with
-// --hash counts as locked. Maven has no lockfile and is not named.
-func unlockedWarnings(gr *model.Graph) []string {
+// unlockedWarnings names the ecosystems whose dependencies come from
+// manifests without a lockfile (or were resolved with --resolve), given the
+// input files and the components of a graph: their hashes are not pinned by
+// the project, and the versions that the manifests do not pin exactly are
+// resolved at the time of the run, so they can differ from those that an
+// installation gets. Without a lockfile
+// npm marks the graph incomplete, PyPI does not (a requirements file is a
+// valid input), so for PyPI this warning is the only hint. A requirements
+// file that pins every package with --hash counts as locked. Maven has no
+// lockfile and is not named. consequence is added for the command (sbom: the
+// SBOM records only registry hashes).
+func unlockedWarnings(inputs []string, comps []*model.Component, consequence string) []string {
 	locked := map[string]bool{}
-	for _, in := range gr.Inputs {
+	for _, in := range inputs {
 		for eco, names := range lockfiles {
 			if slices.Contains(names, filepath.Base(in)) {
 				locked[eco] = true
@@ -142,7 +161,7 @@ func unlockedWarnings(gr *model.Graph) []string {
 		}
 	}
 	unpinned := map[string]int{}
-	for _, c := range gr.Components() {
+	for _, c := range comps {
 		if _, ok := lockfiles[c.Ecosystem]; ok && len(c.Integrity) == 0 {
 			unpinned[c.Ecosystem]++
 		}
@@ -155,9 +174,10 @@ func unlockedWarnings(gr *model.Graph) []string {
 	var out []string
 	for _, eco := range []string{model.NPM, model.PyPI} {
 		if unpinned[eco] > 0 && !locked[eco] {
-			out = append(out, fmt.Sprintf("no lockfile for the %s dependencies: %s resolved at this run, not pinned by the project, "+
-				"and the SBOM can only record the hashes that the registry publishes; pin versions and hashes with a lockfile (%s)",
-				label[eco], count(unpinned[eco], "package version is", "package versions are"), advice[eco]))
+			out = append(out, fmt.Sprintf("no lockfile for the %s dependencies: %s not pinned with a hash by the project, and every version "+
+				"that the manifests do not pin exactly (transitive ones included) is resolved at this run, so it can differ from what an "+
+				"installation gets%s; pin versions and hashes with a lockfile (%s)",
+				label[eco], count(unpinned[eco], "package version is", "package versions are"), consequence, advice[eco]))
 		}
 	}
 	return out

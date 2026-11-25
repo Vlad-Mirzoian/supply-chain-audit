@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/netx"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/report"
 )
 
@@ -65,7 +68,27 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"typosquat", ""}, exitUsage},
 		{[]string{"scan", "--offline", filepath.Join(empty, "missing")}, exitUsage},
 		{[]string{"scan", "--offline", "--ecosystem", "cargo", empty}, exitUsage},
-		{[]string{"scan", "--offline", empty}, exitIncomplete},
+		// a directory without any project file is a wrong target, as a
+		// missing one
+		{[]string{"scan", "--offline", empty}, exitUsage},
+		{[]string{"graph", "--offline", "--cache", empty, empty}, exitUsage},
+		{[]string{"sbom", "--offline", "--cache", empty, "--out", t.TempDir(), empty}, exitUsage},
+		// a flag after the arguments would be ignored (scan, graph, sbom,
+		// ci-audit) or taken for an argument (typosquat, diff)
+		{[]string{"scan", empty, "--offline"}, exitUsage},
+		{[]string{"graph", filepath.Join("..", "..", "testdata", "npm-v3"), "--json"}, exitUsage},
+		{[]string{"sbom", empty, "--no-enrich"}, exitUsage},
+		{[]string{"ci-audit", empty, "--json"}, exitUsage},
+		{[]string{"typosquat", "requets", "--ecosystem", "pypi"}, exitUsage},
+		{[]string{"diff", "a.json", "b.json", "--json"}, exitUsage},
+		{[]string{"cache", "seal", "--json"}, exitUsage},
+		// one project directory only
+		{[]string{"scan", "--offline", empty, empty}, exitUsage},
+		{[]string{"ci-audit", empty, empty}, exitUsage},
+		{[]string{"typosquat", "--top", "-1", "lodash"}, exitUsage},
+		// --tree and --depth have no JSON form
+		{[]string{"graph", "--offline", "--cache", empty, "--json", "--tree", filepath.Join("..", "..", "testdata", "npm-v3")}, exitUsage},
+		{[]string{"graph", "--offline", "--cache", empty, "--json", "--depth", "2", filepath.Join("..", "..", "testdata", "npm-v3")}, exitUsage},
 		{[]string{"graph", "--offline", filepath.Join(empty, "missing")}, exitUsage},
 		// a complete lockfile graph is 0, an out-of-sync lockfile 2
 		{[]string{"graph", "--offline", "--cache", empty, filepath.Join("..", "..", "testdata", "npm-v3")}, exitOK},
@@ -98,8 +121,8 @@ func TestScanFindsProjectPolicy(t *testing.T) {
 	if got := run([]string{"scan", "--offline", "--quiet", "--out", t.TempDir(), dir}); got != exitUsage {
 		t.Errorf("faulty project policy: exit %d, want %d", got, exitUsage)
 	}
-	if got := run([]string{"scan", "--offline", "--quiet", "--policy", "builtin", "--out", t.TempDir(), dir}); got != exitIncomplete {
-		t.Errorf("--policy builtin: exit %d, want %d (no manifest)", got, exitIncomplete)
+	if got := run([]string{"scan", "--offline", "--quiet", "--policy", "builtin", "--out", t.TempDir(), dir}); got != exitUsage {
+		t.Errorf("--policy builtin: exit %d, want %d (no manifest)", got, exitUsage)
 	}
 	info, err := policyInfo(dir, filepath.Join(dir, ".ssca", "policy.yaml"), true)
 	if err != nil || info.Source != ".ssca/policy.yaml" || !info.Discovered || len(info.SHA256) != 64 {
@@ -161,6 +184,20 @@ func TestValidateExitCodes(t *testing.T) {
 		{[]string{"sbom", "--min-score", "101", "--validate", good}, exitUsage},
 		{[]string{"sbom", "--min-score", "90", t.TempDir()}, exitUsage},
 		{[]string{"sbom", "--validate", "--json", good}, exitUsage},
+		// flags of SBOM generation and a project directory are not silently
+		// ignored by --validate, nor --json without it
+		{[]string{"sbom", "--validate", good, t.TempDir()}, exitUsage},
+		{[]string{"sbom", "--out", t.TempDir(), "--validate", good}, exitUsage},
+		{[]string{"sbom", "--runtime-only", "--validate", good}, exitUsage},
+		{[]string{"sbom", "--json", t.TempDir()}, exitUsage},
+		{[]string{"sbom", "--min-score", "80", t.TempDir()}, exitUsage},
+		// diff: an SBOM that states that it is incomplete is no pass, but a
+		// high or critical change still blocks
+		{[]string{"diff", good, good}, exitOK},
+		{[]string{"diff", good, incomplete}, exitIncomplete},
+		{[]string{"diff", "--json", incomplete, good}, exitIncomplete},
+		{[]string{"diff", "--mode", "declared-vs-observed", low, incomplete}, exitIncomplete},
+		{[]string{"diff", "--mode", "declared-vs-observed", empty, incomplete}, exitViolation},
 	}
 	for _, c := range cases {
 		if got := run(c.args); got != c.want {
@@ -197,10 +234,10 @@ func TestCacheCommand(t *testing.T) {
 	}
 }
 
-// sbom warns when the npm or PyPI dependencies come without a lockfile: their
-// versions are resolved at the run and their hashes are not pinned. A
-// lockfile, or a requirements file that pins every hash, gives no warning;
-// Maven, which has no lockfile, gives none either.
+// sbom, graph and scan warn when the npm or PyPI dependencies come without a
+// lockfile: their hashes are not pinned and the versions not pinned exactly
+// are resolved at the run. A lockfile, or a requirements file that pins every
+// hash, gives no warning; Maven, which has no lockfile, gives none either.
 func TestUnlockedWarnings(t *testing.T) {
 	mk := func(inputs []string, comps ...*model.Component) *model.Graph {
 		g := model.NewGraph(model.NewComponent(model.PyPI, "", "app", "1.0"))
@@ -214,8 +251,12 @@ func TestUnlockedWarnings(t *testing.T) {
 	pinned := model.NewComponent(model.PyPI, "", "idna", "3.10")
 	pinned.Integrity = []string{"sha256:" + strings.Repeat("a", 64)}
 	mvn := model.NewComponent(model.Maven, "org.x", "lib", "1.0")
-	if w := unlockedWarnings(mk([]string{"requirements.txt"}, py, pinned)); len(w) != 1 ||
-		!strings.Contains(w[0], "no lockfile for the PyPI dependencies: 1 package version is resolved") || !strings.Contains(w[0], "pip-compile --generate-hashes") {
+	warn := func(g *model.Graph) []string {
+		return unlockedWarnings(g.Inputs, g.Components(), ", and the SBOM can only record registry hashes")
+	}
+	if w := warn(mk([]string{"requirements.txt"}, py, pinned)); len(w) != 1 ||
+		!strings.Contains(w[0], "no lockfile for the PyPI dependencies: 1 package version is not pinned with a hash") || !strings.Contains(w[0], "pip-compile --generate-hashes") ||
+		!strings.Contains(w[0], "differ from what an installation gets, and the SBOM can only record registry hashes;") {
 		t.Errorf("requirements without hashes: %v", w)
 	}
 	for name, g := range map[string]*model.Graph{
@@ -223,8 +264,75 @@ func TestUnlockedWarnings(t *testing.T) {
 		"pinned hashes": mk([]string{"requirements.txt"}, pinned),
 		"maven":         mk([]string{"pom.xml"}, mvn),
 	} {
-		if w := unlockedWarnings(g); len(w) != 0 {
+		if w := warn(g); len(w) != 0 {
 			t.Errorf("%s: unexpected warning %v", name, w)
 		}
+	}
+}
+
+// stdout runs the command line and returns its exit code and standard output.
+func stdout(t *testing.T, args ...string) (int, string) {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	done := make(chan []byte)
+	go func() { b, _ := io.ReadAll(r); done <- b }()
+	code := run(args)
+	w.Close()
+	os.Stdout = old
+	return code, string(<-done)
+}
+
+// The SBOMs of scan name the root as the sbom command does: a scoped npm
+// package keeps its scope (it was named after the last segment of its purl).
+func TestScanSBOMRootName(t *testing.T) {
+	dir, out := t.TempDir(), t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"name":"@acme/orders","version":"2.0.0"}`), 0o644)
+	os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte(`{"name":"@acme/orders","version":"2.0.0","lockfileVersion":3,"packages":{"":{"name":"@acme/orders","version":"2.0.0"}}}`), 0o644)
+	run([]string{"scan", "--offline", "--cache", t.TempDir(), "--quiet", "--no-metadata", "--provenance=false", "--out", out, dir})
+	var cdx struct {
+		Metadata struct {
+			Component struct{ Name, Version string }
+		}
+	}
+	var spdx struct{ Name string }
+	b, _ := os.ReadFile(filepath.Join(out, "sbom.cdx.json"))
+	json.Unmarshal(b, &cdx)
+	b, _ = os.ReadFile(filepath.Join(out, "sbom.spdx.json"))
+	json.Unmarshal(b, &spdx)
+	if c := cdx.Metadata.Component; c.Name != "@acme/orders" || c.Version != "2.0.0" || spdx.Name != "@acme/orders" {
+		t.Errorf("root of the scan SBOMs: CycloneDX %+v, SPDX %q", c, spdx.Name)
+	}
+}
+
+// graph --json gives empty lists, not null, for a graph without
+// components, cycles, conflicts or incomplete reasons.
+func TestGraphJSONEmptyLists(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"name":"x","version":"1.0.0"}`), 0o644)
+	os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte(`{"name":"x","version":"1.0.0","lockfileVersion":3,"packages":{"":{"name":"x","version":"1.0.0"}}}`), 0o644)
+	code, out := stdout(t, "graph", "--offline", "--cache", t.TempDir(), "--json", dir)
+	var g map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(out), &g); code != exitOK || err != nil {
+		t.Fatalf("exit %d, %v: %s", code, err, out)
+	}
+	for _, k := range []string{"components", "cycles", "conflicts", "incomplete"} {
+		if string(g[k]) != "[]" {
+			t.Errorf("%s: %s, want []", k, g[k])
+		}
+	}
+}
+
+// cache --json names the reason of exit code 4 (a damaged seal manifest).
+func TestCacheJSONSealError(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, netx.SealFile), []byte("{"), 0o644)
+	code, out := stdout(t, "cache", "--cache", dir, "--json")
+	if code != exitSelfCheck || !strings.Contains(out, `"seal_error"`) {
+		t.Errorf("exit %d, want %d with seal_error: %s", code, exitSelfCheck, out)
 	}
 }

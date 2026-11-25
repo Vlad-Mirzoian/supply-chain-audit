@@ -45,15 +45,39 @@ func cmdDiff(args []string) int {
 	}
 	res := sbom.Diff(a, b, sbom.Mode(*mode), vuln.Compare, nil)
 	if *asJSON {
-		out, _ := json.MarshalIndent(res, "", "  ")
+		// the reasons why an input SBOM may lack components, by file, as
+		// the text output notes them
+		inc := map[string][]string{}
+		for _, x := range []struct {
+			name string
+			d    *sbom.Doc
+		}{{fs.Arg(0), a}, {fs.Arg(1), b}} {
+			if len(x.d.Incomplete) > 0 {
+				inc[x.name] = x.d.Incomplete
+			}
+		}
+		out, _ := json.MarshalIndent(struct {
+			sbom.DiffResult
+			Incomplete map[string][]string `json:"incomplete,omitempty"`
+		}{res, inc}, "", "  ")
 		fmt.Println(string(out))
 	} else {
 		printDiff(os.Stdout, fs.Arg(0), fs.Arg(1), a, b, res)
 	}
+	return diffExit(a, b, res)
+}
+
+// diffExit is 1 if a change is high or critical; otherwise 2 if one of the
+// SBOMs states that it is incomplete (its missing packages may hide or fake
+// changes, so the result is not a pass), else 0.
+func diffExit(a, b *sbom.Doc, res sbom.DiffResult) int {
 	for _, c := range res.Changes {
 		if model.SeverityRank(c.Severity) >= model.SeverityRank(model.SevHigh) {
 			return exitViolation
 		}
+	}
+	if len(a.Incomplete) > 0 || len(b.Incomplete) > 0 {
+		return exitIncomplete
 	}
 	return exitOK
 }
@@ -62,7 +86,11 @@ func cmdDiff(args []string) int {
 // the number of changes per severity, then one line per change, the most
 // severe first.
 func printDiff(w io.Writer, nameA, nameB string, a, b *sbom.Doc, res sbom.DiffResult) {
-	fmt.Fprintf(w, "%s: %s (%s) → %s (%s)\n", res.Mode, nameA, count(len(a.Components), "component"), nameB, count(len(b.Components), "component"))
+	mark := ""
+	if len(a.Incomplete) > 0 || len(b.Incomplete) > 0 {
+		mark = " — INCOMPLETE (see below)"
+	}
+	fmt.Fprintf(w, "%s: %s (%s) → %s (%s)%s\n", res.Mode, nameA, count(len(a.Components), "component"), nameB, count(len(b.Components), "component"), mark)
 	for _, x := range []struct {
 		name string
 		d    *sbom.Doc

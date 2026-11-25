@@ -31,7 +31,7 @@ func cmdVerifyArtifact(args []string) int {
 		return code
 	}
 	if fset.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: ssca verify-artifact [--bundle B] --repo owner/name ARTIFACT")
+		fmt.Fprintln(os.Stderr, "usage: ssca verify-artifact [--bundle B] [--repo owner/name] [--builder IDS] [--sha512 HEX] [--json] ARTIFACT")
 		return exitUsage
 	}
 	art := fset.Arg(0)

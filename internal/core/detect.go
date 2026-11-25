@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -15,6 +16,10 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/graph"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
+
+// ErrNoProject: the directory has no project file of a supported ecosystem
+// (or none of the ecosystem named with --ecosystem).
+var ErrNoProject = errors.New("no supported project files")
 
 // Plugins lists the registered ecosystem plugins.
 var Plugins = []common.Plugin{npm.Plugin{}, pypi.Plugin{}, maven.Plugin{}}
@@ -52,7 +57,7 @@ func BuildGraph(ctx context.Context, dir, eco string, opt common.Options) (*mode
 		Merge(g, pg)
 	}
 	if g == nil {
-		return nil, nil, fmt.Errorf("no supported project files in %s", dir)
+		return nil, nil, fmt.Errorf("%w in %s", ErrNoProject, dir)
 	}
 	if len(ecos) > 1 {
 		reroot(g, projectRoot(dir, roots))

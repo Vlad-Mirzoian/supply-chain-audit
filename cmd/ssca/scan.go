@@ -44,11 +44,8 @@ func cmdScan(args []string) int {
 	if code, ok := parseArgs(fs, args); !ok {
 		return code
 	}
-	dir := "."
-	if fs.NArg() > 0 {
-		dir = fs.Arg(0)
-	}
-	if !g.checkTarget(dir) {
+	dir, ok := projectDir(fs)
+	if !ok || !g.checkTarget(dir) {
 		return exitUsage
 	}
 	polFile, discovered := policy.Find(dir, *policyPath)
@@ -100,25 +97,21 @@ func cmdScan(args []string) int {
 			return exitSelfCheck
 		}
 		fmt.Fprintln(os.Stderr, "error:", err)
-		return exitIncomplete
+		return buildExit(err)
 	}
 	rep.Policy = polInfo
-	root := rep.Project.Root
-	name := root[strings.LastIndex(root, "/")+1:]
-	ver := ""
-	if i := strings.LastIndex(name, "@"); i > 0 {
-		name, ver = name[:i], name[i+1:]
-	}
 	created := now
 	if created.IsZero() {
 		created = time.Now()
 	}
-	cdx, err := doc.CycloneDX(name, ver)
+	// the root is named as by the sbom command (npm "@scope/name", Maven
+	// "group:artifact"), not by the last segment of its purl
+	cdx, err := doc.CycloneDX(doc.RootName, doc.RootVersion)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: CycloneDX SBOM:", err)
 		return exitIncomplete
 	}
-	spdx, err := doc.SPDX(name)
+	spdx, err := doc.SPDX(doc.RootName)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error: SPDX SBOM:", err)
 		return exitIncomplete
@@ -132,16 +125,43 @@ func cmdScan(args []string) int {
 		return exitIncomplete
 	}
 	if p := os.Getenv("GITHUB_STEP_SUMMARY"); p != "" {
-		if f, err := os.OpenFile(p, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644); err == nil {
-			f.WriteString(rep.Markdown())
-			f.Close()
+		if err := appendFile(p, rep.Markdown()); err != nil {
+			// the reports are written and the decision stands; only the job
+			// summary of GitHub Actions is missing
+			fmt.Fprintln(os.Stderr, "warning: GITHUB_STEP_SUMMARY:", err)
 		}
 	}
 	if !*quiet {
 		fmt.Print(rep.Markdown())
 		fmt.Printf("\nreports written to %s (exit code %d)\n", *out, rep.Decision.ExitCode)
 	}
+	for _, w := range unlockedWarnings(rep.Project.Inputs, rep.Components, "") {
+		fmt.Fprintln(os.Stderr, "warning:", w)
+	}
 	return rep.Decision.ExitCode
+}
+
+// appendFile appends text to the file at path, creating it if needed.
+func appendFile(path, text string) error {
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o644)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(text)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	return err
+}
+
+// buildExit is the exit code of a dependency graph that could not be built:
+// a directory without any supported project file is a usage error (a wrong
+// directory, as one that does not exist), anything else exit code 2.
+func buildExit(err error) int {
+	if errors.Is(err, core.ErrNoProject) {
+		return exitUsage
+	}
+	return exitIncomplete
 }
 
 // policyInfo records which policy a scan applied: the file (relative to the

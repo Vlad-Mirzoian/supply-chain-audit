@@ -29,6 +29,9 @@ type Doc struct {
 	Components []Comp
 	Edges      [][2]string // parent key -> child key (purl without version)
 	Root       string
+	// RootName and RootVersion name the root component as its ecosystem
+	// does (npm "@scope/name", Maven "group:artifact"); FromGraph sets them.
+	RootName, RootVersion string
 	// Incomplete holds the reasons why the inventory may lack components
 	// (model.Graph.Incomplete). CycloneDX records them as an "incomplete"
 	// composition of the root and as properties, SPDX in the creation
@@ -73,6 +76,9 @@ func (c *Comp) addHash(alg, v string) {
 // FromGraph converts the component graph to a Doc.
 func FromGraph(g *model.Graph, tool string, now time.Time) *Doc {
 	d := &Doc{Format: "internal", Tool: tool, Author: "ssca", Timestamp: now.UTC().Format(time.RFC3339), Context: "pre-build", Root: g.Root}
+	if r := g.Nodes[g.Root]; r != nil {
+		d.RootName, d.RootVersion = r.FullName(), r.Version
+	}
 	seen := map[string]bool{}
 	for _, r := range g.Incomplete {
 		if !seen[r] {

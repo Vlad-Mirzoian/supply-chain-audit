@@ -101,7 +101,12 @@ func main() {
 	fmt.Println("n,edges,graph_s,tarjan_s,score_s,typosquat_s,sbom_s,diff_s,policy_s,total_s,peak_heap_mb")
 	for _, n := range sizes {
 		rng := rand.New(rand.NewSource(int64(n)))
-		dir, _ := os.MkdirTemp("", "bench")
+		// without a temporary directory dir would be "" and the synthetic
+		// manifests would overwrite those of the current directory
+		dir, err := os.MkdirTemp("", "bench")
+		if err != nil {
+			panic(err)
+		}
 		if err := synth(dir, n, rng); err != nil {
 			panic(err)
 		}

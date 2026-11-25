@@ -34,14 +34,15 @@ func cmdGraph(args []string) int {
 		fmt.Fprintln(os.Stderr, "error: --depth must not be negative")
 		return exitUsage
 	}
+	if *asJSON && (*asTree || *maxDepth > 0) {
+		fmt.Fprintln(os.Stderr, "error: --tree and --depth apply to the text output, not to --json")
+		return exitUsage
+	}
 	if *maxDepth > 0 {
 		*asTree = true
 	}
-	dir := "."
-	if fs.NArg() > 0 {
-		dir = fs.Arg(0)
-	}
-	if !g.checkTarget(dir) {
+	dir, ok := projectDir(fs)
+	if !ok || !g.checkTarget(dir) {
 		return exitUsage
 	}
 	ctx := context.Background()
@@ -50,7 +51,7 @@ func cmdGraph(args []string) int {
 	gr, _, err := core.BuildGraph(ctx, dir, g.eco, common.Options{Net: net, IncludeDev: !g.runtime, MaxRounds: 3, ForceResolve: g.resolve})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
-		return exitIncomplete
+		return buildExit(err)
 	}
 	comps := gr.Components()
 	if *asJSON {
@@ -64,12 +65,14 @@ func cmdGraph(args []string) int {
 			LockScope string `json:"lockfile_scope,omitempty"`
 			ScopeVia  string `json:"scope_via,omitempty"`
 		}
-		var rows []row
+		// empty lists are [] and not null, so that a script can iterate
+		// over them without a check
+		rows := []row{}
 		for _, c := range comps {
 			rows = append(rows, row{c.PURL, c.Depth, string(c.Scope), c.Source, c.Evicted, string(c.LockScope), c.ScopeVia})
 		}
 		out := map[string]any{"root": gr.Root, "components": rows, "edges": gr.EdgeCount(),
-			"cycles": gr.Cycles, "conflicts": gr.Conflicts, "incomplete": gr.Incomplete,
+			"cycles": orEmpty(gr.Cycles), "conflicts": orEmpty(gr.Conflicts), "incomplete": orEmpty(gr.Incomplete),
 			"seconds": time.Since(start).Seconds(), "requests": net.Requests.Load()}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
@@ -141,6 +144,9 @@ func printGraph(w io.Writer, g *global, gr *model.Graph, took time.Duration, req
 		fmt.Fprintln(w, "  conflict:", line)
 	}
 	printIncomplete(w, g, gr.Incomplete)
+	for _, s := range unlockedWarnings(gr.Inputs, comps, "") {
+		fmt.Fprintln(w, "  warning:", s)
+	}
 	if tree {
 		fmt.Fprintln(w)
 		printTree(w, gr, maxDepth)
@@ -258,6 +264,14 @@ func printTree(w io.Writer, gr *model.Graph, maxDepth int) {
 	if len(legend) > 0 {
 		fmt.Fprintln(w, strings.Join(legend, "; "))
 	}
+}
+
+// orEmpty is s, or an empty slice for nil (JSON [] instead of null).
+func orEmpty[T any](s []T) []T {
+	if s == nil {
+		return []T{}
+	}
+	return s
 }
 
 // graphExit is exit code 2 for an incomplete graph, as for scan: a graph

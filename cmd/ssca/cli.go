@@ -29,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.0.5"
+var Version = "1.0.6"
 
 type global struct {
 	cacheDir string
@@ -101,7 +101,11 @@ func (g *global) addIncludeDev(fs *flag.FlagSet) {
 }
 
 // parseArgs parses the flags of a subcommand; -h prints its usage and ends
-// with exit code 0, a flag error with exit code 3.
+// with exit code 0, a flag error with exit code 3. The flag package stops at
+// the first argument that is not a flag, so a flag written after the
+// arguments would be silently ignored or taken for an argument ("ssca scan .
+// --offline" would go online, "ssca typosquat requets --ecosystem pypi"
+// would check "--ecosystem" as an npm name): that is a usage error too.
 func parseArgs(fs *flag.FlagSet, args []string) (int, bool) {
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -109,8 +113,31 @@ func parseArgs(fs *flag.FlagSet, args []string) (int, bool) {
 		}
 		return exitUsage, false
 	}
+	for _, a := range fs.Args() {
+		if len(a) > 1 && strings.HasPrefix(a, "-") {
+			fmt.Fprintf(os.Stderr, "error: %s after the arguments would not be applied: flags go before the arguments (ssca %s -h)\n", a, fs.Name())
+			return exitUsage, false
+		}
+	}
 	return exitOK, true
 }
+
+// projectDir is the project directory of scan, graph, sbom and ci-audit:
+// the only argument, "." without one.
+func projectDir(fs *flag.FlagSet) (string, bool) {
+	switch fs.NArg() {
+	case 0:
+		return ".", true
+	case 1:
+		return fs.Arg(0), true
+	}
+	fmt.Fprintf(os.Stderr, "error: one project directory expected, got %d arguments (%s)\n", fs.NArg(), strings.Join(fs.Args(), " "))
+	return "", false
+}
+
+// cacheTTLWarned: a faulty SSCA_CACHE_TTL is reported once per run, although
+// a command may create several clients.
+var cacheTTLWarned bool
 
 func (g *global) client() *netx.Client {
 	c := netx.New(g.cacheDir, g.offline)
@@ -121,6 +148,9 @@ func (g *global) client() *netx.Client {
 	if v := os.Getenv("SSCA_CACHE_TTL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil && d > 0 {
 			c.TTL = d
+		} else if !cacheTTLWarned {
+			cacheTTLWarned = true
+			fmt.Fprintf(os.Stderr, "warning: SSCA_CACHE_TTL=%q is not a positive Go duration such as 24h; the default of %s is used\n", v, c.TTL)
 		}
 	}
 	return c

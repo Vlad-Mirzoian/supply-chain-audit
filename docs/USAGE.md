@@ -23,13 +23,18 @@ see the [README](../README.md). Every command prints its flags with `-h`.
 | 0 | no policy violation (or `-h`) |
 | 1 | policy violation: the build is blocked |
 | 2 | the analysis is incomplete and nothing was violated |
-| 3 | usage error: bad flag, missing directory, unknown `--ecosystem`, invalid policy or VEX document |
+| 3 | usage error: bad flag, flag after the arguments, missing directory or one without project files, unknown `--ecosystem`, invalid policy or VEX document |
 | 4 | self-check failure: a file of a sealed data snapshot was changed |
 
 The subcommands print text for people and give scripts these exit codes;
 `graph`, `diff`, `sbom --validate` and `verify-artifact` also have `--json`.
+Flags go before the arguments (`ssca scan --offline .`, not `ssca scan .
+--offline`): a flag after them is a usage error, because it would otherwise be
+ignored.
 
-An incomplete result is never reported as a pass. It says so at the end of the
+An incomplete result is not reported as a pass, unless the policy of `scan`
+sets `thresholds.incomplete_analysis: warn` (then a run without violations
+passes and the report still lists the reasons). It says so at the end of the
 first line ("— INCOMPLETE (n reasons, see below)") and ends with exit code 2;
 this includes `sbom`, whose documents then carry the reasons (a CycloneDX
 composition `incomplete` of the root plus `ssca:incomplete` properties, the
@@ -78,11 +83,13 @@ decision. Writes its reports to `--out` (default `ssca-out`).
 
 Prints the dependency graph summary (components, edges, cycles, conflicts,
 depth and scope distribution). `--tree [--depth N]` prints the dependency tree
-with repeated subtrees shown once. `graph` ends with exit code 2 when the graph
+with repeated subtrees shown once (not with `--json`, which lists every
+component with its depth and scope). `graph` ends with exit code 2 when the graph
 is incomplete (also with `--json`) and marks the first line of its summary with
 `INCOMPLETE`. A conflict is a dependency whose versions are known but none
 satisfies the range; a dependency whose data could not be fetched is only a
 reason of incompleteness (an unresolved npm optional dependency is a note).
+Without a lockfile the text output warns as `sbom` does (see below).
 
 ### sbom
 
@@ -104,9 +111,12 @@ registry are used only when the lockfile records none, and only in the SBOM:
 the integrity check (M3) compares the lockfile with the registry.
 
 When the npm or PyPI dependencies come without a lockfile (`requirements.txt`,
-`pyproject.toml`, `package.json` alone, or `--resolve`), `sbom` warns: their
-versions are resolved at the time of the run and their hashes are not pinned by
-the project. A lockfile pins both (`uv lock`, `poetry lock`,
+`pyproject.toml`, `package.json` alone, or `--resolve`), `sbom`, `graph` and
+`scan` (on standard error) warn: their hashes are not pinned by the project,
+and every version that the manifests do not pin exactly, transitive ones
+included, is resolved at the time of the run and can differ from what an
+installation gets. For npm such a graph is also incomplete (exit code 2); for
+PyPI the warning is the only sign. A lockfile pins both (`uv lock`, `poetry lock`,
 `pip-compile --generate-hashes`, `npm install --package-lock-only`); a
 requirements file that pins every package with `--hash` counts as locked. Maven
 has no lockfile and is not named.
@@ -120,7 +130,10 @@ reasons of an incomplete analysis.
 elements and decides: exit code 2 if the SBOM states that it is incomplete (the
 dependency relationships element then counts as not met), 1 if it has no
 components or the score is below `--min-score` (default 80 %, at most two
-elements missing), otherwise 0.
+elements missing), otherwise 0. `--min-score` and `--json` apply only to
+`--validate`, and the flags of SBOM generation (`--out`, `--ecosystem`,
+`--runtime-only`, `--resolve`, `--no-enrich`) and a project directory are
+usage errors with it.
 
 ### diff
 
@@ -129,7 +142,11 @@ elements missing), otherwise 0.
 Compares two SBOMs with purl normalisation (PEP 503 for Python names) and
 reports added, removed and changed components and the Jaccard similarity.
 Modes: `declared-vs-observed` (default), `release-vs-release`,
-`vendor-vs-generated`.
+`vendor-vs-generated`. Exit code 1 if a change is high or critical (a phantom
+component, changed provenance, a hash mismatch of the same version);
+otherwise 2 if one of the SBOMs states that it is incomplete (its missing
+packages may be no real change; `--json` lists the reasons under
+`incomplete`), else 0.
 
 ### typosquat
 
