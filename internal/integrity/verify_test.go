@@ -20,13 +20,14 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/netx"
 )
 
-// trustedRoot copies the Sigstore trusted root of the project's data snapshot
-// into dir; the test is skipped when the snapshot is not available.
+// trustedRoot copies the Sigstore trusted root of the test data into dir (it
+// used to read the data snapshot outside the repository, so that the tests
+// were skipped wherever the snapshot was missing, CI included).
 func trustedRoot(t *testing.T, dir string) {
 	t.Helper()
-	b, err := os.ReadFile(filepath.Join("..", "..", "..", ".cache", "ssca", "sigstore-trusted_root.json"))
+	b, err := os.ReadFile(filepath.Join("..", "..", "testdata", "sigstore", "trusted_root-2026-11-06.json"))
 	if err != nil {
-		t.Skip("no Sigstore trusted root in the data snapshot")
+		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "sigstore-trusted_root.json"), b, 0o644); err != nil {
 		t.Fatal(err)
@@ -81,11 +82,75 @@ func TestPyPIProvenanceDeterministicAndUnavailable(t *testing.T) {
 		}
 	}
 	// online: the registry says the announced attestation does not exist
+	// (not served: a warning, not a failed verification)
 	missing["/prov/demo-1.0-py3-none-any.whl"] = true
 	v := &Verifier{Net: netx.New(t.TempDir(), false), Trust: &Trust{CacheDir: cache, Offline: true}, Provenance: true}
 	fs, r, _ := v.checkOne(context.Background(), c)
-	if r == nil || r.Unavailable || len(fs) != 1 || fs[0].Rule != "provenance-invalid" {
+	if r == nil || r.Unavailable || !r.NotServed || len(fs) != 1 || fs[0].Rule != "provenance-unavailable" {
 		t.Fatalf("missing attestation not reported: %+v %+v", r, fs)
+	}
+}
+
+// An attestation that the npm metadata announces but the registry does not
+// serve (seen on 25 November 2026 for trusted-publishing releases: HTTP 404, or
+// HTTP 200 with the body "OK") cannot be verified, but it is no evidence of
+// tampering: a warning (provenance-unavailable), not provenance-invalid, which
+// fails the build. A bundle that is served and does not verify still fails, and
+// a required attestation that is not served is still unsigned.
+func TestNPMProvenanceNotServed(t *testing.T) {
+	cache := t.TempDir()
+	b, err := os.ReadFile(filepath.Join("..", "..", "testdata", "sigstore", "trusted_root-2026-11-06.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(cache, "sigstore-trusted_root.json"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/-/npm/v1/attestations/pkg@1.0.0":
+			http.NotFound(w, r)
+		case "/-/npm/v1/attestations/pkg@2.0.0":
+			w.Write([]byte("OK\r\n"))
+		case "/-/npm/v1/attestations/pkg@3.0.0": // only a publish attestation, no SLSA provenance
+			w.Write([]byte(`{"attestations":[{"predicateType":"https://github.com/npm/attestation/tree/main/specs/publish/v0.1","bundle":{}}]}`))
+		case "/-/npm/v1/attestations/pkg@4.0.0": // a provenance bundle that does not verify
+			w.Write([]byte(`{"attestations":[{"predicateType":"https://slsa.dev/provenance/v1","bundle":{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}}]}`))
+		default:
+			http.Error(w, "unexpected request "+r.URL.Path, http.StatusTeapot)
+		}
+	}))
+	defer srv.Close()
+	old := npm.Registry
+	npm.Registry = srv.URL
+	defer func() { npm.Registry = old }()
+
+	sum := sha512.Sum512([]byte("pkg"))
+	sri := "sha512-" + base64.StdEncoding.EncodeToString(sum[:])
+	check := func(version string, expect map[string]string) ([]string, *Result) {
+		v := &Verifier{Net: netx.New(t.TempDir(), false), Trust: &Trust{CacheDir: cache, Offline: true}, Provenance: true, Expect: expect}
+		c := model.NewComponent(model.NPM, "", "pkg", version)
+		c.Integrity, c.Meta = []string{sri}, &model.PackageMeta{HasProvenance: true}
+		fs, r, _ := v.checkOne(context.Background(), c)
+		var rules []string
+		for _, f := range fs {
+			if f.Kind == model.KindProvenance {
+				rules = append(rules, f.Rule)
+			}
+		}
+		return rules, r
+	}
+	for _, version := range []string{"1.0.0", "2.0.0", "3.0.0"} {
+		rules, r := check(version, nil)
+		if r == nil || r.Unavailable || !r.NotServed || len(rules) != 1 || rules[0] != "provenance-unavailable" {
+			t.Errorf("%s: rules %v, result %+v; want provenance-unavailable", version, rules, r)
+		}
+	}
+	if rules, r := check("4.0.0", nil); r == nil || r.NotServed || len(rules) != 1 || rules[0] != "provenance-invalid" {
+		t.Errorf("bundle that does not verify: rules %v, result %+v; want provenance-invalid", rules, r)
+	}
+	if rules, _ := check("1.0.0", map[string]string{"pkg": "github.com/x/pkg"}); strings.Join(rules, ",") != "unsigned-artifact,provenance-unavailable" {
+		t.Errorf("required attestation not served: rules %v; want unsigned-artifact and provenance-unavailable", rules)
 	}
 }
 

@@ -294,12 +294,21 @@ func (v *Verifier) checkOne(ctx context.Context, c *model.Component) ([]*model.F
 		})
 	}
 	if res != nil && res.Error != "" && !res.Unavailable && c.Meta != nil && c.Meta.HasProvenance {
-		out = append(out, &model.Finding{
-			ID: "SSCA-PROV-INVALID", Kind: model.KindProvenance, Rule: "provenance-invalid", Component: c.PURL,
-			Severity: model.SevCritical, Module: "M3",
-			Title:  "Provenance attestation does not verify",
-			Detail: res.Error,
-		})
+		if res.NotServed {
+			out = append(out, &model.Finding{
+				ID: "SSCA-PROV-UNAVAILABLE", Kind: model.KindProvenance, Rule: "provenance-unavailable", Component: c.PURL,
+				Severity: model.SevMedium, Module: "M3",
+				Title:  "Provenance attestation announced but not served by the registry",
+				Detail: res.Error,
+			})
+		} else {
+			out = append(out, &model.Finding{
+				ID: "SSCA-PROV-INVALID", Kind: model.KindProvenance, Rule: "provenance-invalid", Component: c.PURL,
+				Severity: model.SevCritical, Module: "M3",
+				Title:  "Provenance attestation does not verify",
+				Detail: res.Error,
+			})
+		}
 	}
 	return out, res, h
 }
@@ -327,11 +336,19 @@ func npmMetaRead(c *model.Component) bool {
 }
 
 // fetchFailed classifies a download error. An attestation that the registry
-// reports as missing although the metadata announces it is a verification
-// failure; any other error (network, offline snapshot) only means that nothing
-// could be checked.
+// reports as missing (404) is not served: nothing was verified, a warning when
+// the metadata announces it (a required attestation stays unsigned); any other
+// error (network, offline snapshot) only means that nothing could be checked
+// and makes the analysis incomplete.
 func fetchFailed(what string, err error) Result {
-	return Result{Error: what + ": " + err.Error(), Unavailable: !errors.Is(err, netx.ErrNotFound)}
+	notFound := errors.Is(err, netx.ErrNotFound)
+	return Result{Error: what + ": " + err.Error(), Unavailable: !notFound, NotServed: notFound}
+}
+
+// notServed is the result for a registry response that is not the announced
+// attestation (for example "OK" instead of a JSON document).
+func notServed(what, why string) Result {
+	return Result{Error: what + ": " + why, NotServed: true}
 }
 
 // npmPublic are the hosts that serve the packages of the public npm registry.
@@ -516,7 +533,7 @@ func (v *Verifier) npmProvenance(ctx context.Context, c *model.Component) Result
 		} `json:"attestations"`
 	}
 	if err := json.Unmarshal(raw, &doc); err != nil {
-		return Result{Error: err.Error()}
+		return notServed("attestations", "the registry response is not an attestation document ("+err.Error()+")")
 	}
 	digest, alg := sriDigest(c)
 	if digest == nil {
@@ -542,7 +559,7 @@ func (v *Verifier) npmProvenance(ctx context.Context, c *model.Component) Result
 		}
 		return r
 	}
-	return Result{Error: "no SLSA provenance attestation found"}
+	return notServed("attestations", "no SLSA provenance attestation in the registry response")
 }
 
 func sriDigest(c *model.Component) ([]byte, string) {
@@ -669,7 +686,7 @@ func (v *Verifier) pep740(ctx context.Context, f pypi.SimpleFile) Result {
 		} `json:"attestation_bundles"`
 	}
 	if err := json.Unmarshal(raw, &prov); err != nil {
-		return Result{Error: err.Error()}
+		return notServed("provenance", "the index response is not a provenance object ("+err.Error()+")")
 	}
 	digest, err := hex.DecodeString(f.Hashes["sha256"])
 	if err != nil {
@@ -701,7 +718,7 @@ func (v *Verifier) pep740(ctx context.Context, f pypi.SimpleFile) Result {
 			return r
 		}
 	}
-	return Result{Error: "no attestation in provenance object"}
+	return notServed("provenance", "no attestation in the provenance object")
 }
 
 func orUnknown(s string) string {

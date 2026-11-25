@@ -202,7 +202,7 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 	}
 	sort.Strings(hashMissing)
 	incomplete = append(incomplete, hashMissing...)
-	verified := 0
+	verified, notServed := 0, 0
 	var unavailable []string
 	for purl, pr := range provResults {
 		if pr.Verified {
@@ -211,12 +211,16 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 		if pr.Unavailable {
 			unavailable = append(unavailable, "provenance of "+purl+" could not be checked: "+pr.Error)
 		}
+		if pr.NotServed {
+			notServed++ // announced but not served by the registry: a warning, not an incomplete analysis
+		}
 	}
 	sort.Strings(unavailable)
 	incomplete = append(incomplete, unavailable...)
 	r.Counters["provenance_verified"] = verified
-	r.Counters["provenance_checked"] = len(provResults) - len(unavailable)
+	r.Counters["provenance_checked"] = len(provResults) - len(unavailable) - notServed
 	r.Counters["provenance_unchecked"] = len(unavailable)
+	r.Counters["provenance_not_served"] = notServed
 	r.TrustedRootCopy = trust.SavedCopy(o.Now)
 
 	// M4 signals

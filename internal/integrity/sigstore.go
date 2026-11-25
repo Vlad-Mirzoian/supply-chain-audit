@@ -163,6 +163,14 @@ type Result struct {
 	// verified, which makes the analysis incomplete but is not evidence of
 	// tampering.
 	Unavailable bool `json:"unavailable,omitempty"`
+	// NotServed means that the registry metadata announces an attestation but
+	// the registry does not serve it: the attestation URL answers 404, or with
+	// a response that is not an attestation document, or with a document that
+	// lacks the announced statement. Nothing could be verified; this is a fault
+	// of the registry data (seen on npm for trusted-publishing releases), not
+	// evidence of tampering, and is reported as a warning
+	// (provenance-unavailable), not as a failed verification.
+	NotServed bool `json:"not_served,omitempty"`
 	// TrustedRootCopy is set by verify-artifact when an offline run verified
 	// against the saved trusted root.
 	TrustedRootCopy *RootCopy `json:"trusted_root_copy,omitempty"`

@@ -286,6 +286,18 @@ explicit `--offline` uses the copy; `scan` reports then state its date and age
 (`trusted_root_copy` in report.json, `summary.md`, the HTML report), and so
 does `verify-artifact`.
 
+**Announced but not served.** When the registry metadata announces an
+attestation but the registry does not serve it (the attestation URL answers
+404, or with a response that is not an attestation document, or with a
+document without the announced SLSA statement; npm does this for some
+trusted-publishing releases), nothing can be verified, and it is no evidence of
+tampering: `scan` reports `SSCA-PROV-UNAVAILABLE` and the built-in policy warns
+(`provenance-unavailable`). An attestation that is served and does not verify is
+`SSCA-PROV-INVALID` and fails the build (`integrity-failure`); a package named
+in `require_provenance` whose attestation is not served stays unsigned
+(`unsigned-artifact`). report.json counts these packages in
+`counters.provenance_not_served`.
+
 **Trusted builders.** A verified SLSA statement must name a trusted builder
 (policy `trusted_builders`; an entry ending in `/` or `@` is a prefix). Default:
 the GitHub-hosted runners, the builder IDs of npm's SLSA v0.2 statements and
@@ -390,8 +402,8 @@ The built-in policy fails on the critical risk band, warns on high, fails an
 incomplete analysis and contains these rules: `known-malicious`,
 `exploited-in-runtime`, `critical-reachable-cve`, `integrity-failure`,
 `unsigned-artifact`, `dependency-confusion`, `provenance-regression` (fail) and
-`untrusted-builder`, `provenance-missing`, `cooldown`, `unpinned-ci-action`
-(warn). Its source is `policy.Default` in
+`untrusted-builder`, `provenance-unavailable`, `provenance-missing`, `cooldown`,
+`unpinned-ci-action` (warn). Its source is `policy.Default` in
 [`internal/policy/policy.go`](../internal/policy/policy.go) and a good
 starting point for a project policy.
 

@@ -100,8 +100,9 @@ const Baseline = `- id: known-malicious
 `
 
 // Default is used when no policy file is given. It contains the rules of
-// Listing 3.1 and five more: critical-reachable-cve, integrity-failure,
-// unsigned-artifact, dependency-confusion (fail) and untrusted-builder (warn).
+// Listing 3.1 and six more: critical-reachable-cve, integrity-failure,
+// unsigned-artifact, dependency-confusion (fail), untrusted-builder and
+// provenance-unavailable (warn).
 const Default = `thresholds:
   fail_on_band: critical
   warn_on_band: high
@@ -124,6 +125,9 @@ rules:
     action: fail
   - id: untrusted-builder
     when: finding.rule == 'untrusted-builder'
+    action: warn
+  - id: provenance-unavailable
+    when: finding.rule == 'provenance-unavailable'
     action: warn
   - id: dependency-confusion
     when: signals.dependency_confusion == true
