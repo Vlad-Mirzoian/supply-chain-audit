@@ -1,5 +1,5 @@
-// Command ssca-roc scores a labelled list of package names with Algorithm 3.2
-// for ROC analysis of the typosquatting detector, configured as the scan uses
+// Command ssca-roc scores a labelled list of package names with the name check
+// of internal/risk for ROC analysis of the typosquatting detector, configured as the scan uses
 // it: the whole embedded dictionary is protected (data.Corpus(eco, 0), as in
 // core.Scan) and the popularity of every name is unknown (downloads -1, as in
 // risk.Signals for a component without registry metadata), so the corpus floor

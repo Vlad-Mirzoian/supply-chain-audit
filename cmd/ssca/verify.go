@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/integrity"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/netx"
 )
 
 // cmdVerifyArtifact verifies a build artifact against its Sigstore bundle and
@@ -74,6 +75,9 @@ func cmdVerifyArtifact(args []string) int {
 		}
 		return exitViolation
 	}
+	if !rootSelfCheck(g) {
+		return exitSelfCheck
+	}
 	trust := &integrity.Trust{CacheDir: g.cacheDir, Offline: g.offline}
 	tr, err := trust.Root()
 	if err != nil {
@@ -114,7 +118,7 @@ func cmdVerifyArtifact(args []string) int {
 	}
 	if res.Verified && !integrity.Trusted(res, trusted) {
 		// a valid signature, but the build ran on a builder that is not
-		// trusted (FR-08): the release gate does not accept it
+		// trusted: the release gate does not accept it
 		res.Verified = false
 		res.Error = "untrusted builder: " + res.BuilderID
 	}
@@ -133,6 +137,29 @@ func cmdVerifyArtifact(args []string) int {
 		return exitViolation
 	}
 	return exitOK
+}
+
+// rootSelfCheck checks the saved trusted root of a sealed data snapshot
+// before an offline run relies on it, as scan does: a damaged seal manifest
+// or a changed copy is a self-check failure (exit code 4). Online runs
+// obtain the trusted root through TUF and ignore the seal.
+func rootSelfCheck(g *global) bool {
+	if !g.offline {
+		return true
+	}
+	sl, err := netx.LoadSeal(g.cacheDir)
+	if err == nil && sl != nil {
+		for _, f := range integrity.RootCopyFiles {
+			if err = sl.CheckFile(g.cacheDir, f); err != nil {
+				break
+			}
+		}
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error: self-check failed:", err)
+		return false
+	}
+	return true
 }
 
 func printJSON(v any) {

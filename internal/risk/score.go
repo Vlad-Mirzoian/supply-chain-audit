@@ -12,7 +12,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
 
-// Weights are the policy parameters of Table 3.3.
+// Weights are the policy parameters of the composite risk score (CRS).
 type Weights struct {
 	HealthFactor    float64            `yaml:"health_factor"`
 	TyposquatFactor float64            `yaml:"typosquat_factor"`
@@ -21,9 +21,9 @@ type Weights struct {
 	Health          map[string]float64 `yaml:"health"`
 }
 
-// DefaultWeights returns the expert estimates of Table 3.3 with the health
+// DefaultWeights returns the expert estimates of the weights with the health
 // factor calibrated on corpus (a) (0.4 instead of 0.5: poor health alone
-// gives at most CRS 40, the Medium band; Section 4.3.7).
+// gives at most CRS 40, the Medium band).
 func DefaultWeights() Weights {
 	return Weights{
 		HealthFactor: 0.4, TyposquatFactor: 0.7, CooldownDays: 7,
@@ -44,7 +44,7 @@ func (w Weights) sig(name string) float64 {
 }
 
 // Internal describes the organisation's private packages (dependency
-// confusion check, Section 4.4).
+// confusion check).
 type Internal struct {
 	Scopes   []string `yaml:"scopes"`
 	Names    []string `yaml:"names"`
@@ -202,7 +202,7 @@ func Health(c *model.Component, w Weights, now time.Time) (float64, []model.Sign
 	return num / den, ind
 }
 
-// Exposure is the factor c of Section 3.1.4.
+// Exposure is the exposure factor c of the CRS.
 func Exposure(c *model.Component, unreachable bool) float64 {
 	var x float64
 	// optional (npm) and provided (Maven) dependencies run in production
@@ -234,7 +234,7 @@ func NoisyOr(xs []float64) float64 {
 	return 1 - p
 }
 
-// VulnProb is formula (3.1).
+// VulnProb is the probability p of one vulnerability from CVSS and EPSS.
 func VulnProb(cvss, epss float64, kev bool) float64 {
 	e := epss
 	if kev {
@@ -243,13 +243,13 @@ func VulnProb(cvss, epss float64, kev bool) float64 {
 	return cvss / 10 * (0.3 + 0.7*e)
 }
 
-// Input bundles the per-component evidence for Algorithm 3.3.
+// Input bundles the per-component evidence for ScoreGraph.
 type Input struct {
 	Findings map[string][]*model.Finding
 	Signals  map[string][]model.Signal
 }
 
-// ScoreGraph is Algorithm 3.3: CRS for every node and subtree risk with the
+// ScoreGraph computes the CRS of every node and the subtree risk with the
 // worst path for every node.
 func ScoreGraph(g *model.Graph, in Input, w Weights, now time.Time) map[string]*model.Score {
 	scores := map[string]*model.Score{}

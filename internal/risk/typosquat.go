@@ -26,12 +26,12 @@ type Squat struct {
 	Distance   float64 `json:"distance,omitempty"`
 }
 
-// Index is the corpus index of Algorithm 3.2.
+// Index is the corpus index of the typosquatting detector.
 type Index struct {
 	Eco       string
 	K         int     // maximum number of deletions (k)
 	Tau       float64 // similarity threshold (τ)
-	GapFactor float64 // required popularity ratio (100 in Section 3.5.2)
+	GapFactor float64 // required popularity ratio (100 by default)
 	names     []string
 	downloads map[string]int64
 	exact     map[string]bool
@@ -222,7 +222,8 @@ func insdel(c byte) float64 {
 	return 1
 }
 
-// WeightedDL is the weighted Damerau–Levenshtein distance of Table 3.15,
+// WeightedDL is the weighted Damerau–Levenshtein distance (keyboard
+// neighbours, homoglyphs and separators cost less than other edits),
 // computed in a band; it returns limit+1 as soon as the distance must exceed
 // limit (Ukkonen's cut-off).
 func WeightedDL(a, b string, limit float64) float64 {
@@ -280,18 +281,18 @@ func abs(x int) int {
 	return x
 }
 
-// Similarity is formula (3.4).
+// Similarity is 1 − d / max(|a|, |b|) for the distance d of a and b.
 func Similarity(a, b string, d float64) float64 {
 	return 1 - d/float64(max(len(a), len(b)))
 }
 
-// ---------------------------------------------------------------- Algorithm 3.2
+// ---------------------------------------------------------------- name check
 
 var prefixes = []string{"python-", "py-", "py", "node-", "js-", "go-", "lib", "the-", "real-", "official-"}
 var suffixes = []string{"-js", ".js", "js", "-py", "py", "-python", "-node", "-utils", "-util", "-cli", "-dev", "-lib", "-core", "-api", "-sdk", "-tools", "-tool", "-helper", "-helpers", "-plus", "-pro", "-new", "-latest", "-fix", "2", "3", "-v2"}
 
 // Candidates returns every corpus name within the similarity threshold,
-// without the popularity filter (line 11 of Algorithm 3.2).
+// without the popularity-gap filter of Check.
 func (ix *Index) Candidates(name string) []Squat {
 	n := ix.normalise(name)
 	if ix.exact[n] {
@@ -386,7 +387,7 @@ func (ix *Index) Candidates(name string) []Squat {
 	return out
 }
 
-// Check is Algorithm 3.2 including the popularity-gap filter. downloads is
+// Check is the name check including the popularity-gap filter. downloads is
 // the popularity of the candidate (negative: unknown, the corpus floor is
 // used as an upper estimate).
 func (ix *Index) Check(name string, downloads int64) []Squat {
@@ -465,7 +466,7 @@ func Established(m *model.PackageMeta, now time.Time) (bool, string) {
 
 // ConfirmNPMSquat re-checks a suspected npm typosquat name@version of target
 // with registry data that the corpus does not hold: the popularity gap of
-// Algorithm 3.2 line 11 with the real downloads of the last month (the
+// Check with the real downloads of the last month (the
 // candidate is no typosquat if the target has fewer than 100 times its
 // downloads), and the maintainers (a candidate that shares a maintainer with
 // the target is a companion package, such as mongodb-core of mongodb). It

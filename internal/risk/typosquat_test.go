@@ -11,7 +11,7 @@ import (
 
 func near(a, b float64) bool { return math.Abs(a-b) < 0.01 }
 
-// Values from the text of Section 3.5.2.
+// Values quoted in the thesis (loadsh, crossenv and other examples).
 func TestWeightedDistanceExamples(t *testing.T) {
 	cases := []struct {
 		a, b string

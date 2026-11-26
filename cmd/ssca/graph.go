@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/core"
-	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/common"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
 
@@ -48,7 +47,10 @@ func cmdGraph(args []string) int {
 	ctx := context.Background()
 	net := g.client()
 	start := time.Now()
-	gr, _, err := core.BuildGraph(ctx, dir, g.eco, common.Options{Net: net, IncludeDev: !g.runtime, MaxRounds: 3, ForceResolve: g.resolve})
+	gr, _, err := core.BuildGraph(ctx, dir, g.eco, graphOptions(g, net))
+	if !selfCheck(net) {
+		return exitSelfCheck
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return buildExit(err)
@@ -77,6 +79,11 @@ func cmdGraph(args []string) int {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 		_ = enc.Encode(out)
+		// the JSON has no field for it: the warning goes to stderr, as
+		// in scan
+		for _, w := range unlockedWarnings(gr.Inputs, comps, "") {
+			fmt.Fprintln(os.Stderr, "warning:", w)
+		}
 		return graphExit(gr)
 	}
 	printGraph(os.Stdout, g, gr, time.Since(start), net.Requests.Load(), *asTree, *maxDepth)

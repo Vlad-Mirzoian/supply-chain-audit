@@ -9,7 +9,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
 
-// The worked example of Table 3.4 must be reproduced by the implementation.
+// The worked example of the thesis must be reproduced by the implementation.
 func TestWorkedExampleTable34(t *testing.T) {
 	crs := func(c, v, h, m float64) float64 { return 100 * (1 - (1-c*v)*(1-0.5*h)*(1-m)) }
 	cases := []struct {
@@ -119,7 +119,7 @@ func TestTopDirectTieOrder(t *testing.T) {
 	}
 }
 
-// The calibrated health factor (Section 4.3.7): a package with the worst
+// The calibrated health factor: a package with the worst
 // possible health and no other risk gets CRS 40, the Medium band, so poor
 // health alone no longer produces a High warning.
 func TestHealthAloneIsMedium(t *testing.T) {

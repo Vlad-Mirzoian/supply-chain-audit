@@ -10,7 +10,7 @@ import (
 
 // A real npm provenance bundle (sigstore@2.0.0) verifies offline against the
 // public-good trusted root; the builder ID of the SLSA statement is read and
-// judged against the trusted builders (FR-08): the GitHub-hosted runner is
+// judged against the trusted builders: the GitHub-hosted runner is
 // trusted by default, a self-hosted runner is not, and a policy list
 // replaces the default.
 func TestTrustedBuilder(t *testing.T) {

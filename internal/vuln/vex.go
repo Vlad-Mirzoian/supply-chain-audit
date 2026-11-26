@@ -305,7 +305,7 @@ func (s Statement) later(t Statement) bool {
 // statement about it, so that a later affected or under_investigation
 // statement revokes an earlier not_affected one. Findings whose latest status
 // is not_affected or fixed are suppressed; they stay in the report with their
-// justification (FR-10). It returns the number of suppressed findings.
+// justification. It returns the number of suppressed findings.
 func ApplyVEX(findings []*model.Finding, stmts []Statement) int {
 	n := 0
 	for _, f := range findings {

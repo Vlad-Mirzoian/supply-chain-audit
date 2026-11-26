@@ -5,7 +5,9 @@ package integrity
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,6 +43,11 @@ const rootCopyFile = "sigstore-trusted_root.json"
 // data snapshot.
 const fetchedSuffix = ".fetched"
 
+// RootCopyFiles are the files of the saved trusted root in a cache
+// directory; an offline run on a sealed data snapshot checks them against the
+// seal before it relies on them.
+var RootCopyFiles = []string{rootCopyFile, rootCopyFile + fetchedSuffix}
+
 // fetchTUF returns the trusted root from TUF (a variable for tests).
 var fetchTUF = func(dir string) ([]byte, error) {
 	cl, err := tuf.New(tuf.DefaultOptions().WithCachePath(dir).WithCacheValidity(1))
@@ -55,6 +62,10 @@ func (t *Trust) Root() (*root.TrustedRoot, error) {
 	t.once.Do(func() {
 		snap := filepath.Join(t.CacheDir, rootCopyFile)
 		if t.Offline {
+			if _, err := os.Stat(snap); errors.Is(err, fs.ErrNotExist) {
+				t.err = fmt.Errorf("no saved copy in %s (an online run saves one)", t.CacheDir)
+				return
+			}
 			if t.tr, t.err = root.NewTrustedRootFromPath(snap); t.err == nil {
 				t.fetched = copyFetched(snap)
 			}
@@ -283,7 +294,7 @@ var DefaultTrustedBuilders = []string{
 	"https://gitlab.com/gitlab-org/gitlab-runner/",
 }
 
-// TrustedBuilder reports whether a builder ID is on the list (FR-08). An
+// TrustedBuilder reports whether a builder ID is on the list. An
 // empty builder ID (a PEP 740 publish attestation, which names no builder)
 // is not judged.
 func TrustedBuilder(id string, list []string) bool {

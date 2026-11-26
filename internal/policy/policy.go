@@ -1,4 +1,4 @@
-// Package policy evaluates the declarative policy file (Section 3.4.6):
+// Package policy evaluates the declarative policy file:
 // band thresholds, rules written as boolean expressions over findings and
 // components, and time-limited exceptions that must carry a reason.
 package policy
@@ -112,9 +112,11 @@ const Baseline = `- id: known-malicious
 `
 
 // Default is used when no policy file is given. It contains the rules of
-// Listing 3.1 and six more: critical-reachable-cve, integrity-failure,
-// unsigned-artifact, dependency-confusion (fail), untrusted-builder and
-// provenance-unavailable (warn).
+// the example policy of the thesis (thresholds, known-malicious,
+// exploited-in-runtime, provenance-regression, provenance-missing, cooldown,
+// unpinned-ci-action) and six more: critical-reachable-cve,
+// integrity-failure, unsigned-artifact, dependency-confusion (fail),
+// untrusted-builder and provenance-unavailable (warn).
 const Default = `thresholds:
   fail_on_band: critical
   warn_on_band: high

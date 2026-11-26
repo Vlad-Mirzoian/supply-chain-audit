@@ -1,4 +1,4 @@
-// diff: comparison of two SBOMs (Algorithm 3.4).
+// diff: comparison of two SBOMs (M1).
 
 package main
 
@@ -40,7 +40,18 @@ func cmdDiff(args []string) int {
 		return exitUsage
 	}
 	switch sbom.Mode(*mode) {
-	case sbom.DeclaredVsObserved, sbom.ReleaseVsRelease, sbom.VendorVsGenerated:
+	case sbom.ReleaseVsRelease:
+	case sbom.DeclaredVsObserved, sbom.VendorVsGenerated:
+		// only release-vs-release reads release histories: in the other
+		// modes these flags would be silently ignored
+		set := map[string]bool{}
+		fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
+		for _, f := range []string{"now", "offline", "cache"} {
+			if set[f] {
+				fmt.Fprintf(os.Stderr, "error: --%s applies only to --mode release-vs-release, which reads the release history of added packages\n", f)
+				return exitUsage
+			}
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "error: unknown mode %q (declared-vs-observed, release-vs-release or vendor-vs-generated)\n", *mode)
 		return exitUsage
@@ -61,11 +72,8 @@ func cmdDiff(args []string) int {
 		young = ages.young
 	}
 	res := sbom.Diff(a, b, sbom.Mode(*mode), vuln.Compare, young)
-	if ages.net != nil {
-		if err := ages.net.SealError(); err != nil {
-			fmt.Fprintln(os.Stderr, "error: self-check failed:", err)
-			return exitSelfCheck
-		}
+	if !selfCheck(ages.net) {
+		return exitSelfCheck
 	}
 	if *asJSON {
 		// the reasons why an input SBOM may lack components, by file, as
@@ -136,8 +144,22 @@ func (p *packageAges) young(key string) bool {
 		}
 		return false
 	}
+	// an age that cannot be judged is not taken for an old package
+	const day = "2006-01-02"
+	switch {
+	case m.FirstReleaseAt.IsZero():
+		p.unknown = append(p.unknown, key+": the release history has no release dates")
+		return false
+	case m.FirstReleaseAt.After(p.ref):
+		// the package is in the second SBOM but was first released only
+		// after the time it is judged against: a wrong --now or SBOM
+		// timestamp, or a name that was deleted and registered again
+		p.unknown = append(p.unknown, fmt.Sprintf("%s: first release %s is later than %s, the time the age is judged against",
+			key, m.FirstReleaseAt.UTC().Format(day), p.ref.UTC().Format(day)))
+		return false
+	}
 	age := p.ref.Sub(m.FirstReleaseAt).Hours() / 24
-	if age >= 0 && age < risk.DefaultWeights().CooldownDays {
+	if age < risk.DefaultWeights().CooldownDays {
 		p.nYoung++
 		return true
 	}

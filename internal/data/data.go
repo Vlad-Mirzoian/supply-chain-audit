@@ -1,6 +1,6 @@
 // Package data embeds the versioned data snapshot shipped with the suite:
 // the popular-package corpora used by the typosquatting detector. Their
-// hashes are checked at start-up (self-protection, NFR-07, exit code 4).
+// hashes are checked at start-up (self-protection, exit code 4).
 package data
 
 import (

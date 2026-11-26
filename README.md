@@ -106,7 +106,8 @@ Other commands:
 
 Main `scan` flags: `--out`, `--policy`, `--vex`, `--offline`, `--now`,
 `--include-dev`, `--runtime-only`, `--reachability`. Every command prints its
-flags with `-h`; all details are in [docs/USAGE.md](docs/USAGE.md).
+flags with `-h` (or `ssca help COMMAND`); all details are in
+[docs/USAGE.md](docs/USAGE.md).
 
 ## Exit codes
 

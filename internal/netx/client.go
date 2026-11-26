@@ -1,7 +1,7 @@
 // Package netx is the network layer shared by all data-source adapters. It
 // caches every response on disk, so that a run can be repeated offline from
-// the same data snapshot (NFR-03, NFR-06, NFR-10), limits concurrency per
-// host and validates response sizes at trust boundary TB-A.
+// the same data snapshot, limits concurrency per host and validates response
+// sizes at the trust boundary to the external data sources.
 package netx
 
 import (

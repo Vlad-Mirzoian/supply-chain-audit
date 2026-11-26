@@ -10,7 +10,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
 
-// Mode selects the use case of Algorithm 3.4.
+// Mode selects the use case of the SBOM comparison.
 type Mode string
 
 const (
@@ -29,7 +29,7 @@ type Change struct {
 	Detail   string `json:"detail,omitempty"`
 }
 
-// DiffResult is the output of Algorithm 3.4.
+// DiffResult is the result of Diff.
 type DiffResult struct {
 	Mode    Mode     `json:"mode"`
 	Changes []Change `json:"changes"`
@@ -75,7 +75,7 @@ func versionOf(purl string) string {
 	return ""
 }
 
-// Diff is Algorithm 3.4. cmp orders versions (may be nil); young reports
+// Diff compares two SBOMs. cmp orders versions (may be nil); young reports
 // whether a newly added package is younger than the cooldown period.
 func Diff(a, b *Doc, mode Mode, cmp func(eco, x, y string) int, young func(key string) bool) DiffResult {
 	ma, mb := index(a), index(b)
@@ -252,7 +252,7 @@ func size(a, b string) string {
 	return "patch"
 }
 
-// severity assigns the defaults of Table 3.16.
+// severity assigns the default severity of a change.
 func severity(c Change, mode Mode) string {
 	switch c.Class {
 	case "PHANTOM", "PROVENANCE_CHANGED":

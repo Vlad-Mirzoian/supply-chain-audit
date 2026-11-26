@@ -1,5 +1,5 @@
 // Package core is the orchestrator: it detects the project type, builds the
-// graph (M0) and runs the analysis modules in the order of Fig. 3.5.
+// graph (M0) and runs the analysis modules in the order of the pipeline.
 package core
 
 import (

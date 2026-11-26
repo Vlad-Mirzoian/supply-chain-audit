@@ -1,7 +1,7 @@
-// Package reach implements the optional reachability analysis (FR-19) at
+// Package reach implements the optional reachability analysis at
 // package level: starting from the import statements of the application, it
 // follows the import statements found inside dependency archives. Archives
-// are only read as data; no package code is executed (NFR-07).
+// are only read as data; no package code is executed.
 package reach
 
 import (

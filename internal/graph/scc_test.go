@@ -22,7 +22,7 @@ func build(edges [][2]string) *model.Graph {
 	return g
 }
 
-// The example of Fig. 3.7: D and E depend on each other.
+// D and E depend on each other: one cycle.
 func TestTarjanFindsCycle(t *testing.T) {
 	g := build([][2]string{{"app", "a"}, {"app", "b"}, {"a", "c"}, {"b", "d"}, {"d", "e"}, {"e", "d"}, {"d", "c"}})
 	sccs := Tarjan(g)

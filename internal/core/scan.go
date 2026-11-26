@@ -73,7 +73,7 @@ func snapshotCheck(o Options) error {
 		return fmt.Errorf("the policy requires the data snapshot %s, the cache is sealed as %s", req, o.Net.Seal.ID)
 	}
 	if o.Net.Offline && o.Net.Seal != nil {
-		for _, f := range []string{"sigstore-trusted_root.json", "sigstore-trusted_root.json.fetched"} {
+		for _, f := range integrity.RootCopyFiles {
 			if err := o.Net.Seal.CheckFile(o.Net.CacheDir, f); err != nil {
 				return err
 			}
@@ -82,7 +82,7 @@ func snapshotCheck(o Options) error {
 	return nil
 }
 
-// Scan runs the full pipeline of Fig. 3.5 and returns the report and the
+// Scan runs the full pipeline M0–M6 and returns the report and the
 // generated SBOM document.
 func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 	if err := data.SelfCheck(); err != nil {
@@ -336,7 +336,7 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 		r.Counters["vex_suppressed"] = vuln.ApplyVEX(findings, stmts)
 	}
 
-	// Algorithm 3.3
+	// composite risk score (M4)
 	t0 = time.Now()
 	byComp := map[string][]*model.Finding{}
 	for _, f := range findings {

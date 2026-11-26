@@ -476,7 +476,7 @@ jobs:
 	}
 }
 
-// The CI templates shipped with ssca (docs/ci, NFR-04) follow the rules that
+// The CI templates shipped with ssca (docs/ci) follow the rules that
 // M5 checks: the auditor finds nothing in them.
 func TestShippedTemplatesAreClean(t *testing.T) {
 	dir := t.TempDir()

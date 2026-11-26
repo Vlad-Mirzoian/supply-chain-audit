@@ -19,8 +19,8 @@ import (
 const SealFile = "ssca-seal.json"
 
 // ErrSeal reports that a file of a sealed snapshot differs from its manifest
-// (changed, or added after sealing). It is a self-check failure (exit code 4,
-// NFR-07): the external data of the run cannot be trusted.
+// (changed, or added after sealing). It is a self-check failure (exit code
+// 4): the external data of the run cannot be trusted.
 var ErrSeal = errors.New("sealed data snapshot modified")
 
 // Seal is the manifest of a sealed data snapshot: the SHA-256 hash of every

@@ -29,7 +29,7 @@ This folder contains what is needed to repeat them:
 | RQ3 scope, reachability and VEX filtering | `reach/*` (12) |
 | RQ4 known malicious versions (runtime and development dependencies) | `c/*` (2), `c2/*` (2) |
 | RQ4 fresh legitimate releases (sample of 25 November 2026) | `fresh/*` (2) |
-| RQ6 NFR-01: two projects of about 5 000 components | `nfr01/*` (2) |
+| RQ6: scan time of two projects of about 5 000 components (performance requirement) | `nfr01/*` (2) |
 | Case study (CI/CD pipeline, Section 4.5) | `casestudy/*` (5) |
 
 All runs use `--now=2026-11-25T00:00:00Z`.

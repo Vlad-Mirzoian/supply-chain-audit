@@ -91,7 +91,7 @@ type Matcher struct {
 	mu    sync.Mutex
 	cache map[string]*OSV
 	// Rejected counts advisories returned by OSV that the local range check
-	// did not confirm (Section 3.4.4, "ranges are checked again locally").
+	// did not confirm (the ranges are checked again locally).
 	Rejected int
 	// VulnScope selects the components whose vulnerabilities are reported
 	// (nil: all). Known-malicious versions (MAL- records) are reported for
@@ -472,7 +472,7 @@ func baseScore(r *OSV) (float64, string) {
 			return 2.5, ""
 		}
 	}
-	return 5.0, "" // neutral value (Section 3.1.4)
+	return 5.0, "" // neutral value
 }
 
 func sevOf(score float64, r *OSV) string {

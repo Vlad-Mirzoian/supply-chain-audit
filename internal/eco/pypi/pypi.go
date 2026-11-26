@@ -1,6 +1,6 @@
 // Package pypi is the PyPI ecosystem plugin: requirements files, poetry.lock,
 // uv.lock and Pipfile.lock parsers, PEP 440/508 semantics, the PyPI JSON and
-// Simple APIs and resolution with bounded re-selection (Algorithm 3.1).
+// Simple APIs and resolution with bounded re-selection.
 package pypi
 
 import (

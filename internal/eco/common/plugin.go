@@ -1,4 +1,4 @@
-// Package common defines the ecosystem plugin interface (NFR-05): everything
+// Package common defines the ecosystem plugin interface: everything
 // that differs between npm, PyPI and Maven is hidden behind it.
 package common
 
@@ -15,7 +15,7 @@ import (
 type Options struct {
 	Net        *netx.Client
 	IncludeDev bool
-	// MaxRounds bounds the PyPI re-selection loop of Algorithm 3.1 (R).
+	// MaxRounds bounds the PyPI re-selection loop of the resolver.
 	MaxRounds int
 	// ForceResolve ignores lockfiles and resolves from manifests.
 	ForceResolve bool
@@ -26,7 +26,7 @@ type Plugin interface {
 	Name() string
 	// Detect returns the manifests and lockfiles of this ecosystem in dir.
 	Detect(dir string) []string
-	// Load builds the dependency graph of the project in dir (Algorithm 3.1).
+	// Load builds the dependency graph of the project in dir.
 	Load(ctx context.Context, dir string, opt Options) (*model.Graph, error)
 }
 

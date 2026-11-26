@@ -61,7 +61,7 @@ func cmdSBOM(args []string) int {
 	if *validate != "" {
 		// these would be silently ignored: --validate reads a file and
 		// builds no graph
-		for _, f := range []string{"out", "ecosystem", "runtime-only", "resolve", "now"} {
+		for _, f := range []string{"out", "ecosystem", "runtime-only", "resolve", "now", "offline", "cache"} {
 			if set[f] {
 				fmt.Fprintf(os.Stderr, "error: --%s applies only to generating an SBOM, not to --validate\n", f)
 				return exitUsage
@@ -85,7 +85,7 @@ func cmdSBOM(args []string) int {
 				"completeness": c, "incomplete": d.Incomplete, "min_score": *minScore, "verdict": verdict}, "", "  ")
 			fmt.Println(string(b))
 		} else {
-			printAssessment(os.Stdout, g, *validate, d, c, *minScore, verdict)
+			printAssessment(os.Stdout, *validate, d, c, *minScore, verdict)
 		}
 		return code
 	}
@@ -97,15 +97,21 @@ func cmdSBOM(args []string) int {
 	if !ok || !g.checkTarget(dir) {
 		return exitUsage
 	}
-	gr, _, err := core.BuildGraph(context.Background(), dir, g.eco, commonOptions(g))
+	// one client for the graph and the enrichment: one cache, one count
+	// of requests and one self-check of a sealed snapshot
+	net := g.client()
+	gr, _, err := core.BuildGraph(context.Background(), dir, g.eco, graphOptions(g, net))
+	if err == nil && !*noEnrich {
+		col := risk.NewCollector(net, nowOr(now))
+		col.ArtifactHashes = true
+		col.Collect(context.Background(), gr.Components())
+	}
+	if !selfCheck(net) {
+		return exitSelfCheck
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return buildExit(err)
-	}
-	if !*noEnrich {
-		col := risk.NewCollector(g.client(), nowOr(now))
-		col.ArtifactHashes = true
-		col.Collect(context.Background(), gr.Components())
 	}
 	doc := sbom.FromGraph(gr, Version, nowOr(now))
 	cdx, err := doc.CycloneDX(doc.RootName, doc.RootVersion)
@@ -202,7 +208,7 @@ var cisaElements = []struct {
 }
 
 // printAssessment is the text form of sbom --validate.
-func printAssessment(w io.Writer, g *global, path string, d *sbom.Doc, c sbom.Completeness, minScore float64, verdict string) {
+func printAssessment(w io.Writer, path string, d *sbom.Doc, c sbom.Completeness, minScore float64, verdict string) {
 	n := len(d.Components)
 	mark := incompleteMark(d.Incomplete)
 	if verdict == "FAIL" {
@@ -229,7 +235,9 @@ func printAssessment(w io.Writer, g *global, path string, d *sbom.Doc, c sbom.Co
 			fmt.Fprintf(w, "  %-26s %5s\n", e.label, "no")
 		}
 	}
-	printIncomplete(w, g, d.Incomplete)
+	// the reasons come from the file: the snapshot of this run (there is
+	// none) is not named
+	printIncomplete(w, &global{}, d.Incomplete)
 }
 
 // pct is a share as a whole percentage; a share that is not exactly 0 or 1

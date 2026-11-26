@@ -174,7 +174,7 @@ type Conflict struct {
 	Note   string `json:"note"`
 }
 
-// Graph is the shared component graph (Section 3.4.1).
+// Graph is the shared component graph.
 type Graph struct {
 	Root       string                `json:"root"`
 	Nodes      map[string]*Component `json:"nodes"`
@@ -475,7 +475,7 @@ type Signal struct {
 	Reason string  `json:"reason"`
 }
 
-// Score is the composite risk score with its explanation (Section 3.1.4).
+// Score is the composite risk score with its explanation.
 type Score struct {
 	PURL      string   `json:"purl"`
 	Scope     Scope    `json:"scope"`
@@ -492,7 +492,7 @@ type Score struct {
 	WorstPath []string `json:"worst_path,omitempty"`
 }
 
-// BandOf maps a CRS value to its band (Section 3.1.4).
+// BandOf maps a CRS value to its band.
 func BandOf(crs float64) string {
 	switch {
 	case crs >= 75:

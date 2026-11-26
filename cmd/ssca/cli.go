@@ -19,7 +19,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/vuln"
 )
 
-// Exit codes of Table 3.13.
+// Exit codes of the suite (README, docs/USAGE.md).
 const (
 	exitOK         = 0
 	exitViolation  = 1
@@ -29,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.1.0"
+var Version = "1.1.1"
 
 type global struct {
 	cacheDir string
@@ -183,11 +183,11 @@ Usage:
   ssca scan [flags] [dir]        full audit with policy evaluation (M0-M6)
   ssca graph [flags] [dir]       print the dependency graph (M0)
   ssca sbom [flags] [dir]        write CycloneDX and SPDX SBOMs (M1)
-  ssca diff [flags] A B          compare two SBOMs (Algorithm 3.4)
-  ssca typosquat [flags] NAME..  check package names (Algorithm 3.2)
+  ssca diff [flags] A B          compare two SBOMs (M1)
+  ssca typosquat [flags] NAME..  check package names for typosquatting (M4)
   ssca ci-audit [flags] [dir]    audit CI workflows and local actions (M5)
   ssca verify-artifact [flags]   verify a file against a Sigstore bundle (M3)
-  ssca cache [flags]             show the state of the cache in $SSCA_CACHE or --cache
+  ssca cache [flags] [seal]      show or seal the cache in $SSCA_CACHE or --cache
   ssca version, --version        print version
 `)
 }
@@ -199,7 +199,17 @@ func run(args []string) int {
 	}
 	switch args[0] {
 	case "-h", "-help", "--help", "help":
+		// "ssca help scan" is "ssca scan -h"
+		if len(args) == 2 {
+			if c, ok := commands[args[1]]; ok {
+				return c([]string{"-h"})
+			}
+		}
 		usage()
+		if len(args) > 1 {
+			// "ssca help bogus": not a command
+			return exitUsage
+		}
 		return exitOK
 	case "version", "--version", "-version":
 		fmt.Println("ssca", Version)
@@ -249,6 +259,24 @@ func nowOr(t time.Time) time.Time {
 	return t
 }
 
-func commonOptions(g *global) common.Options {
-	return common.Options{Net: g.client(), IncludeDev: !g.runtime, MaxRounds: 3, ForceResolve: g.resolve}
+// graphOptions are the options of the graph builder for graph and sbom; net
+// is the client through which it reads registry data.
+func graphOptions(g *global, net *netx.Client) common.Options {
+	return common.Options{Net: net, IncludeDev: !g.runtime, MaxRounds: 3, ForceResolve: g.resolve}
+}
+
+// selfCheck is false, after the message, if an offline run on a sealed data
+// snapshot found a damaged seal manifest or read a file that is not the one
+// that was sealed: the command then ends with exit code 4 and prints no
+// result, as scan does. It is called after the command has read its data and
+// before it prints or writes anything.
+func selfCheck(net *netx.Client) bool {
+	if net == nil {
+		return true
+	}
+	if err := net.SealError(); err != nil {
+		fmt.Fprintln(os.Stderr, "error: self-check failed:", err)
+		return false
+	}
+	return true
 }

@@ -1,4 +1,4 @@
-// Package graph contains the graph algorithms of Section 3.5: Tarjan's
+// Package graph contains the graph algorithms of the suite: Tarjan's
 // strongly connected components and the condensation used for risk propagation.
 package graph
 

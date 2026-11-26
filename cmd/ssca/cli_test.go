@@ -14,7 +14,7 @@ import (
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/report"
 )
 
-// Exit codes of Table 3.13 for the command line: help is not an error, usage
+// Exit codes of the command line: help is not an error, usage
 // errors give 3, and nothing that could not be checked ends with 0.
 func TestExitCodes(t *testing.T) {
 	empty := t.TempDir()

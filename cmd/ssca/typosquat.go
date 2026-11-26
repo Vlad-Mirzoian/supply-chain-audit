@@ -1,9 +1,10 @@
-// typosquat: check of package names (Algorithm 3.2) with the confirmation
-// that scan applies to a name match.
+// typosquat: check of package names against the corpus of popular names
+// (M4), with the confirmation that scan applies to a name match.
 
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -82,13 +83,13 @@ func cmdTyposquat(args []string) int {
 		c := &squatConfirmer{eco: *eco, now: nowOr(now), col: risk.NewCollector(net, nowOr(now)), reg: npm.NewRegistry(net)}
 		check = func(n string) typoResult { return c.check(n, ix.Check(n, -1)) }
 	}
-	suspect := printTyposquat(os.Stdout, *eco, ix.Size(), src, fs.Args(), check)
-	if net != nil {
-		if err := net.SealError(); err != nil {
-			fmt.Fprintln(os.Stderr, "error: self-check failed:", err)
-			return exitSelfCheck
-		}
+	// the result is printed only after the self-check of a sealed snapshot
+	var buf bytes.Buffer
+	suspect := printTyposquat(&buf, *eco, ix.Size(), src, fs.Args(), check)
+	if !selfCheck(net) {
+		return exitSelfCheck
 	}
+	_, _ = buf.WriteTo(os.Stdout)
 	if suspect {
 		return exitViolation
 	}

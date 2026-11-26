@@ -1,5 +1,5 @@
 // Package sbom is module M1: CycloneDX and SPDX generation, SBOM reading and
-// validation against the CISA minimum elements, and SBOM diff (Algorithm 3.4).
+// validation against the CISA minimum elements, and SBOM diff.
 package sbom
 
 import (
@@ -706,7 +706,7 @@ func readSPDX(b []byte) (*Doc, error) {
 
 // ---------------------------------------------------------------- completeness
 
-// Completeness scores an SBOM against the CISA minimum elements (FR-04).
+// Completeness scores an SBOM against the CISA minimum elements.
 type Completeness struct {
 	Score    float64            `json:"score"`
 	Elements map[string]float64 `json:"elements"`

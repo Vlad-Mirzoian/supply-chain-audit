@@ -1,5 +1,5 @@
 // Command ssca-bench measures how the CPU-bound parts of the suite scale with
-// the size of the dependency graph (NFR-01, NFR-02, Table 3.17). It generates
+// the size of the dependency graph (the performance requirements). It generates
 // synthetic package-lock.json files, so no network access is involved.
 package main
 

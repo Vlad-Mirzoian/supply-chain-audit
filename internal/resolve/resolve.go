@@ -1,6 +1,6 @@
-// Package resolve implements the resolution mode of Algorithm 3.1: a
+// Package resolve implements the resolution mode of the graph builder: a
 // breadth-first traversal of registry metadata in which version selection is
-// delegated to the ecosystem rules of Table 3.14.
+// delegated to the rules of each ecosystem.
 package resolve
 
 import (
@@ -300,7 +300,7 @@ func appendUnique(xs []string, x string) []string {
 }
 
 // prefetcher issues metadata requests ahead of the traversal so that the
-// network latency of the N registry requests overlaps (Section 3.5.1).
+// network latency of the N registry requests overlaps.
 type prefetcher struct {
 	ctx context.Context
 	src Source

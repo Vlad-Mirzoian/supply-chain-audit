@@ -1,7 +1,8 @@
 # ssca usage reference
 
 Detailed behaviour of the `ssca` commands. For installation and a quick start
-see the [README](../README.md). Every command prints its flags with `-h`.
+see the [README](../README.md). Every command prints its flags with `-h` (or
+`ssca help COMMAND`).
 
 - [Exit codes and incomplete results](#exit-codes-and-incomplete-results)
 - [Commands](#commands)
@@ -27,7 +28,8 @@ see the [README](../README.md). Every command prints its flags with `-h`.
 | 4 | self-check failure: a file of a sealed data snapshot was changed |
 
 The subcommands print text for people and give scripts these exit codes;
-`graph`, `diff`, `sbom --validate` and `verify-artifact` also have `--json`.
+`graph`, `diff`, `sbom --validate`, `ci-audit`, `verify-artifact` and `cache`
+also have `--json`.
 Flags go before the arguments (`ssca scan --offline .`, not `ssca scan .
 --offline`): a flag after them is a usage error, because it would otherwise be
 ignored.
@@ -139,8 +141,9 @@ dependency relationships element then counts as not met), 1 if it has no
 components or the score is below `--min-score` (default 80 %, at most two
 elements missing), otherwise 0. `--min-score` and `--json` apply only to
 `--validate`, and the flags of SBOM generation (`--out`, `--ecosystem`,
-`--runtime-only`, `--resolve`, `--no-enrich`, `--now`) and a project directory
-are usage errors with it.
+`--runtime-only`, `--resolve`, `--no-enrich`, `--now`), the data-source flags
+(`--offline`, `--cache`: the reasons of an incomplete SBOM come from the file)
+and a project directory are usage errors with it.
 
 ### diff
 
@@ -158,8 +161,12 @@ SBOM, or before `--now`: a new dependency in a patch release, as in the
 hijacked axios releases. The release history comes from deps.dev or, for a
 package that deps.dev has not indexed yet, from the npm registry or the PyPI
 Simple API, through the cache (`--cache`, `--offline`); it is read only for
-added packages and only in this mode. A package that no source knows is not
-young.
+added packages and only in this mode (`--now`, `--offline` and `--cache` are
+usage errors in the other modes). A package that no source knows is not
+young. An age that cannot be judged is unknown, not old: a history without
+release dates, or a first release later than the time it is judged against (a
+wrong `--now` or SBOM timestamp, or a name that was deleted and registered
+again).
 
 Exit code 1 if a change is high or critical (a phantom component, changed
 provenance, a hash mismatch of the same version, a young added package);
@@ -212,7 +219,8 @@ Verifies a file against a Sigstore bundle (default `<artifact>.sigstore.json`).
 
 See [Data cache and offline snapshots](#data-cache-and-offline-snapshots).
 
-`-h` prints the usage of any command and exits with 0.
+`-h` prints the usage of any command and exits with 0, as does `ssca help
+COMMAND`.
 
 ## Dependency scopes
 
@@ -523,12 +531,15 @@ long to wait (`Retry-After`, seconds or a date), ssca waits that long, at most
 `ssca cache [--cache DIR] [--json]` shows the state of a cache directory: the
 responses per data source, how many an online run would reuse, their dates and
 sizes, and the saved trusted root. It only reads; the directory must be named
-by `SSCA_CACHE` or `--cache`. Exit code 2 if some entries are damaged.
+by `SSCA_CACHE` or `--cache`. Exit code 2 if some entries are damaged, 4 if its
+`ssca-seal.json` is.
 
 `ssca cache seal` freezes a snapshot: it writes `ssca-seal.json` with the
 SHA-256 hash of every file and prints the seal ID. Offline runs on a sealed
-cache check every file they read against it; a changed or added file stops the
-run with exit code 4. A policy can require a sealed snapshot
+cache (`scan`, `graph`, `sbom`, `diff`, `typosquat`, `verify-artifact`) check
+every file they read against it; a changed or added file, or a damaged
+`ssca-seal.json`, stops the run with exit code 4 before any result is printed
+or written. A policy can require a sealed snapshot
 (`data_snapshot: sealed`, or `data_snapshot: sha256:<seal id>` for one seal);
 online runs refresh the cache and ignore the seal.
 
