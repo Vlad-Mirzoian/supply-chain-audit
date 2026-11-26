@@ -25,7 +25,7 @@ func TestTextOutputs(t *testing.T) {
 	a := &sbom.Doc{Components: []sbom.Comp{{PURL: "pkg:npm/a@1.0.0"}, {PURL: "pkg:npm/d@1.0.0"}}}
 	c := &sbom.Doc{Components: []sbom.Comp{{PURL: "pkg:npm/a@0.9.0"}}, Incomplete: []string{"x"}}
 	res := sbom.Diff(a, c, sbom.ReleaseVsRelease, func(_, x, y string) int { return strings.Compare(x, y) }, nil)
-	printDiff(&b, "A", "B", a, c, res)
+	printDiff(&b, "A", "B", a, c, res, &packageAges{})
 	out := b.String()
 	for _, want := range []string{"release-vs-release: A (2 components) → B (1 component)", "B states that it is incomplete",
 		"similarity 0.500 (Jaccard: 1 of 2 packages in both), 2 changes: 1 medium, 1 info", "npm/a  1.0.0 → 0.9.0 (downgrade)"} {
@@ -37,7 +37,7 @@ func TestTextOutputs(t *testing.T) {
 		t.Errorf("diff order or arrows:\n%s", out)
 	}
 	b.Reset()
-	printDiff(&b, "A", "A", a, a, sbom.Diff(a, a, sbom.VendorVsGenerated, nil, nil))
+	printDiff(&b, "A", "A", a, a, sbom.Diff(a, a, sbom.VendorVsGenerated, nil, nil), &packageAges{})
 	if !strings.Contains(b.String(), "similarity 1.000 (Jaccard: 2 of 2 packages in both), no changes") {
 		t.Errorf("equal SBOMs: %s", b.String())
 	}
@@ -63,13 +63,27 @@ func TestTextOutputs(t *testing.T) {
 	}
 
 	b.Reset()
-	suspect := printTyposquat(&b, "npm", 2, "corpus; long description", []string{"lodahs", "react"}, func(n string) []risk.Squat {
+	suspect := printTyposquat(&b, "npm", 2, "corpus; long description", []string{"lodahs", "react"}, func(n string) typoResult {
 		if n == "lodahs" {
-			return []risk.Squat{{Target: "lodash", Similarity: 0.92, Class: "edit-distance"}, {Target: "loadjs", Similarity: 0.83, Class: "edit-distance"}}
+			return typoResult{squats: []risk.Squat{{Target: "lodash", Similarity: 0.92, Class: "edit-distance"}, {Target: "loadjs", Similarity: 0.83, Class: "edit-distance"}}}
 		}
-		return nil
+		return typoResult{}
 	})
 	if want := "corpus: 2 npm names (corpus)\n  lodahs  suspect: lodash (0.92, edit distance), loadjs (0.83, edit distance)\n  react   ok\n1 of 2 names looks like a popular package\n"; !suspect || b.String() != want {
+		t.Errorf("typosquat output:\n%s\nwant:\n%s", b.String(), want)
+	}
+	// a match dismissed with registry data is "ok" with the reason; one that
+	// could not be confirmed stays suspect with the reason
+	b.Reset()
+	sq := []risk.Squat{{Target: "fs-extra", Similarity: 0.85, Class: "token-reorder"}}
+	suspect = printTyposquat(&b, "npm", 2, "corpus", []string{"extra-fs", "fsextra"}, func(n string) typoResult {
+		if n == "extra-fs" {
+			return typoResult{squats: sq, dismissed: "established package: first release 2019-01-01, 9 releases over 3.0 years"}
+		}
+		return typoResult{squats: sq, note: "release history unavailable: not in offline snapshot"}
+	})
+	if want := "corpus: 2 npm names (corpus)\n  extra-fs  ok: like fs-extra (0.85, token reorder), but established package: first release 2019-01-01, 9 releases over 3.0 years\n" +
+		"  fsextra   suspect: fs-extra (0.85, token reorder) (release history unavailable: not in offline snapshot)\n1 of 2 names looks like a popular package\n"; !suspect || b.String() != want {
 		t.Errorf("typosquat output:\n%s\nwant:\n%s", b.String(), want)
 	}
 }

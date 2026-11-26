@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/npm"
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/pypi"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/netx"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/policy"
@@ -524,5 +525,73 @@ func TestDataSnapshotPolicy(t *testing.T) {
 	os.WriteFile(f, []byte("version: 1\ndata_snapshot: latest-verified\n"), 0o644)
 	if _, err := policy.Load(f); err == nil {
 		t.Errorf("unknown data_snapshot value accepted")
+	}
+}
+
+// PyPI dependencies from a requirements file without hashes are a valid
+// input; thresholds.unpinned_dependencies: fail makes them an incomplete
+// analysis (exit code 2), and a requirements file that pins every hash is
+// locked.
+func TestScanUnpinnedDependencies(t *testing.T) {
+	sum := strings.Repeat("ab", 32)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/osv/querybatch", func(w http.ResponseWriter, r *http.Request) {
+		var req struct{ Queries []any }
+		json.NewDecoder(r.Body).Decode(&req)
+		res := make([]map[string]any, len(req.Queries))
+		for i := range res {
+			res[i] = map[string]any{"vulns": []any{}}
+		}
+		json.NewEncoder(w).Encode(map[string]any{"results": res})
+	})
+	mux.HandleFunc("/simple/six/", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"name": "six", "versions": []string{"1.16.0"},
+			"files": []map[string]any{{"filename": "six-1.16.0-py2.py3-none-any.whl", "hashes": map[string]string{"sha256": sum}}}})
+	})
+	mux.HandleFunc("/pypi/six/1.16.0/json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"info": map[string]any{"name": "six", "version": "1.16.0"}})
+	})
+	mux.HandleFunc("/epss", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"data": []any{}})
+	})
+	mux.HandleFunc("/kev", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"vulnerabilities": []any{}})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	oldAPI, oldEPSS, oldKEV, oldIndex := vuln.API, vuln.EPSSURL, vuln.KEVURL, pypi.Index
+	vuln.API, vuln.EPSSURL, vuln.KEVURL, pypi.Index = srv.URL+"/osv", srv.URL+"/epss", srv.URL+"/kev", srv.URL
+	defer func() { vuln.API, vuln.EPSSURL, vuln.KEVURL, pypi.Index = oldAPI, oldEPSS, oldKEV, oldIndex }()
+	scan := func(req, pol string) *report.Report {
+		t.Helper()
+		dir := t.TempDir()
+		os.WriteFile(filepath.Join(dir, "requirements.txt"), []byte(req), 0o644)
+		file := ""
+		if pol != "" {
+			file = filepath.Join(dir, "policy.yaml")
+			os.WriteFile(file, []byte(pol), 0o644)
+		}
+		p, err := policy.Load(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rep, _, err := Scan(context.Background(), Options{Dir: dir, Net: netx.New("", false), Policy: p, NoMetadata: true,
+			Now: time.Date(2026, 11, 25, 0, 0, 0, 0, time.UTC), Version: "test"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return rep
+	}
+	const fail = "extends: builtin\nthresholds:\n  unpinned_dependencies: fail\n"
+	if rep := scan("six==1.16.0\n", ""); rep.Decision.ExitCode != 0 || len(rep.Incomplete) != 0 {
+		t.Errorf("default (warn): exit %d, incomplete %v", rep.Decision.ExitCode, rep.Incomplete)
+	}
+	rep := scan("six==1.16.0\n", fail)
+	if rep.Decision.ExitCode != 2 || rep.Decision.Verdict != "INCOMPLETE" || len(rep.Incomplete) != 1 ||
+		!strings.Contains(rep.Incomplete[0], "no lockfile for the PyPI dependencies: 1 package version is not pinned with a hash") {
+		t.Errorf("unpinned_dependencies: fail: exit %d, incomplete %v", rep.Decision.ExitCode, rep.Incomplete)
+	}
+	if rep := scan("six==1.16.0 --hash=sha256:"+sum+"\n", fail); rep.Decision.ExitCode != 0 || len(rep.Incomplete) != 0 {
+		t.Errorf("hashes pinned: exit %d, incomplete %v", rep.Decision.ExitCode, rep.Incomplete)
 	}
 }

@@ -403,3 +403,76 @@ func TestBaselineRules(t *testing.T) {
 		t.Errorf("built-in policy got baseline violations %q, want none (it has the rules itself)", got)
 	}
 }
+
+// extends: builtin applies the built-in rules and thresholds together with
+// those of the file: disable removes a built-in rule, a rule of the file
+// replaces the built-in rule of the same id, and a threshold the file sets
+// replaces only that threshold.
+func TestPolicyExtendsBuiltin(t *testing.T) {
+	ids := func(p *Policy) string {
+		var out []string
+		for _, r := range p.Rules {
+			out = append(out, r.ID+"="+r.Action)
+		}
+		return strings.Join(out, " ")
+	}
+	def, err := Load("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// only project settings: the policy is the built-in one
+	p, err := load(t, "extends: builtin\ninternal:\n  scopes: ['@acme']\n  registry: https://npm.acme.example/\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids(p) != ids(def) || p.Thresholds != def.Thresholds || len(p.Internal.Scopes) != 1 {
+		t.Errorf("extends without changes: rules %s, thresholds %+v, internal %+v", ids(p), p.Thresholds, p.Internal)
+	}
+	if d := p.Evaluate(subject()); d.ExitCode != 1 {
+		t.Errorf("built-in rules not applied: %+v", d)
+	}
+	p, err = load(t, "extends: builtin\ndisable: [cooldown, unpinned-ci-action]\nthresholds:\n  warn_on_band: medium\nrules:\n"+
+		"  - id: provenance-missing\n    when: signals.provenance_regression == true\n    action: fail\n"+
+		"  - id: no-deprecated\n    when: signals.deprecated == true\n    action: warn\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := ids(p)
+	for _, want := range []string{"known-malicious=fail", "critical-reachable-cve=fail", "provenance-missing=fail", "no-deprecated=warn"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("rules %s lack %s", got, want)
+		}
+	}
+	if strings.Contains(got, "cooldown") || strings.Contains(got, "unpinned-ci-action") || strings.Contains(got, "provenance-missing=warn") {
+		t.Errorf("disabled or replaced rule still applies: %s", got)
+	}
+	if th := p.Thresholds; th.FailOnBand != "critical" || th.WarnOnBand != "medium" || th.IncompleteAnalysis != "fail" {
+		t.Errorf("thresholds %+v", th)
+	}
+	for _, w := range p.Evaluate(subject()).Warnings {
+		if w.Rule == "unpinned-ci-action" {
+			t.Errorf("disabled rule warned: %+v", w)
+		}
+	}
+	// "none" switches an inherited band rule off
+	if p, err = load(t, "extends: builtin\nthresholds:\n  fail_on_band: none\n"); err != nil || p.Thresholds.FailOnBand != "" {
+		t.Errorf("fail_on_band: none: %v, %+v", err, p)
+	}
+	// a file without extends still replaces the built-in policy
+	if p, err = load(t, "rules:\n  - id: x\n    when: vuln.id startswith 'X-'\n    action: fail\n"); err != nil || ids(p) != "x=fail" || p.Thresholds.FailOnBand != "" {
+		t.Errorf("replacing policy: %v, %s, %+v", err, ids(p), p.Thresholds)
+	}
+	for name, src := range map[string]string{
+		"unknown extends":    "extends: strict\n",
+		"disable alone":      "disable: [cooldown]\n",
+		"unknown rule":       "extends: builtin\ndisable: [cooldwn]\n",
+		"baseline rule":      "extends: builtin\ndisable: [known-malicious]\n",
+		"own rule":           "extends: builtin\ndisable: [x]\nrules:\n  - id: x\n    when: vuln.kev == true\n    action: warn\n",
+		"rule defined twice": "extends: builtin\nrules:\n  - id: x\n    when: vuln.kev == true\n    action: warn\n  - id: x\n    when: vuln.kev == true\n    action: fail\n",
+		"unknown unpinned":   "thresholds:\n  unpinned_dependencies: ignore\n",
+	} {
+		if _, err := load(t, src); err == nil {
+			t.Errorf("%s: policy accepted", name)
+		}
+	}
+}

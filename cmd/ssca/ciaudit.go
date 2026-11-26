@@ -3,10 +3,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 
@@ -17,8 +19,14 @@ import (
 
 func cmdCIAudit(args []string) int {
 	fs := flag.NewFlagSet("ci-audit", flag.ContinueOnError)
+	asJSON := fs.Bool("json", false, "print the audited files, the findings and the reasons of an incomplete audit as JSON")
+	asSARIF := fs.Bool("sarif", false, "print the findings as SARIF 2.1.0 (for code scanning; the reasons of an\nincomplete audit are tool execution notifications)")
 	if code, ok := parseArgs(fs, args); !ok {
 		return code
+	}
+	if *asJSON && *asSARIF {
+		fmt.Fprintln(os.Stderr, "error: --json and --sarif exclude each other")
+		return exitUsage
 	}
 	dir, ok := projectDir(fs)
 	if !ok {
@@ -29,7 +37,19 @@ func cmdCIAudit(args []string) int {
 		return exitUsage
 	}
 	findings, files, problems := ciaudit.Audit(dir)
-	printCIAudit(os.Stdout, findings, files, problems)
+	switch {
+	case *asJSON:
+		printJSON(ciAuditJSON(dir, findings, files, problems))
+	case *asSARIF:
+		b, err := ciAuditSARIF(dir, findings, problems)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error: SARIF:", err)
+			return exitIncomplete
+		}
+		fmt.Println(string(b))
+	default:
+		printCIAudit(os.Stdout, findings, files, problems)
+	}
 	for _, f := range findings {
 		if model.SeverityRank(f.Severity) >= model.SeverityRank(model.SevHigh) {
 			return exitViolation
@@ -39,6 +59,45 @@ func cmdCIAudit(args []string) int {
 		return exitIncomplete
 	}
 	return exitOK
+}
+
+// ciAuditJSON is the --json form of ci-audit: the audited files relative to
+// the directory, the findings and the reasons why the audit is incomplete
+// (empty lists rather than null).
+func ciAuditJSON(dir string, findings []*model.Finding, files, problems []string) any {
+	rel := []string{}
+	for _, f := range files {
+		if r, err := filepath.Rel(dir, f); err == nil {
+			f = r
+		}
+		rel = append(rel, filepath.ToSlash(f))
+	}
+	return struct {
+		Files      []string         `json:"files"`
+		Findings   []*model.Finding `json:"findings"`
+		Incomplete []string         `json:"incomplete"`
+	}{rel, append([]*model.Finding{}, findings...), append([]string{}, problems...)}
+}
+
+// ciAuditSARIF is the SARIF form of ci-audit, written as the SARIF report of
+// scan; the reasons of an incomplete audit are tool execution notifications
+// of an unsuccessful invocation.
+func ciAuditSARIF(dir string, findings []*model.Finding, problems []string) ([]byte, error) {
+	b, err := (&report.Report{Version: Version, Project: report.Project{Dir: dir}, Findings: findings}).SARIF()
+	if err != nil || len(problems) == 0 {
+		return b, err
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(b, &doc); err != nil {
+		return nil, err
+	}
+	var notes []map[string]any
+	for _, p := range problems {
+		notes = append(notes, map[string]any{"level": "error", "message": map[string]string{"text": p}})
+	}
+	run := doc["runs"].([]any)[0].(map[string]any)
+	run["invocations"] = []map[string]any{{"executionSuccessful": false, "toolExecutionNotifications": notes}}
+	return json.MarshalIndent(doc, "", "  ")
 }
 
 // printCIAudit groups the findings by file, in the order of the files, and

@@ -93,7 +93,7 @@ Without a lockfile the text output warns as `sbom` does (see below).
 
 ### sbom
 
-    ssca sbom [--out DIR] [--no-enrich] [dir]
+    ssca sbom [--out DIR] [--no-enrich] [--now T] [dir]
     ssca sbom --validate FILE [--min-score N] [--json]
 
 Writes CycloneDX 1.6 and SPDX 2.3 documents with the CISA minimum elements. By
@@ -116,10 +116,17 @@ When the npm or PyPI dependencies come without a lockfile (`requirements.txt`,
 and every version that the manifests do not pin exactly, transitive ones
 included, is resolved at the time of the run and can differ from what an
 installation gets. For npm such a graph is also incomplete (exit code 2); for
-PyPI the warning is the only sign. A lockfile pins both (`uv lock`, `poetry lock`,
+PyPI the warning is the only sign, unless the policy of `scan` sets
+`thresholds.unpinned_dependencies: fail`, which makes it an incomplete analysis
+as well. A lockfile pins both (`uv lock`, `poetry lock`,
 `pip-compile --generate-hashes`, `npm install --package-lock-only`); a
 requirements file that pins every package with `--hash` counts as locked. Maven
 has no lockfile and is not named.
+
+`--now T` (RFC 3339) is the creation time of the SBOMs instead of the time of
+the run. The serial number of the CycloneDX document and the namespace of the
+SPDX document derive from the root and that time, so the same project and the
+same data snapshot (`--offline`) give byte-identical SBOMs.
 
 In SPDX 2.3, which has no field for it, the generation context (the CycloneDX
 lifecycle phase, `pre-build` for an SBOM made from lockfiles and manifests) is
@@ -132,35 +139,61 @@ dependency relationships element then counts as not met), 1 if it has no
 components or the score is below `--min-score` (default 80 %, at most two
 elements missing), otherwise 0. `--min-score` and `--json` apply only to
 `--validate`, and the flags of SBOM generation (`--out`, `--ecosystem`,
-`--runtime-only`, `--resolve`, `--no-enrich`) and a project directory are
-usage errors with it.
+`--runtime-only`, `--resolve`, `--no-enrich`, `--now`) and a project directory
+are usage errors with it.
 
 ### diff
 
-    ssca diff [--mode M] [--json] A.json B.json
+    ssca diff [--mode M] [--json] [--offline] [--now T] A.json B.json
 
 Compares two SBOMs with purl normalisation (PEP 503 for Python names) and
 reports added, removed and changed components and the Jaccard similarity.
 Modes: `declared-vs-observed` (default), `release-vs-release`,
-`vendor-vs-generated`. Exit code 1 if a change is high or critical (a phantom
-component, changed provenance, a hash mismatch of the same version);
+`vendor-vs-generated`.
+
+In `release-vs-release` a package that only the second SBOM has is *young*,
+and high instead of medium, when its first release is less than 7 days (the
+`cooldown_days` of the built-in policy) before the creation time of the second
+SBOM, or before `--now`: a new dependency in a patch release, as in the
+hijacked axios releases. The release history comes from deps.dev or, for a
+package that deps.dev has not indexed yet, from the npm registry or the PyPI
+Simple API, through the cache (`--cache`, `--offline`); it is read only for
+added packages and only in this mode. A package that no source knows is not
+young.
+
+Exit code 1 if a change is high or critical (a phantom component, changed
+provenance, a hash mismatch of the same version, a young added package);
 otherwise 2 if one of the SBOMs states that it is incomplete (its missing
 packages may be no real change; `--json` lists the reasons under
-`incomplete`), else 0.
+`incomplete`) or the age of an added package is unknown (`unknown_age`),
+else 0.
 
 ### typosquat
 
-    ssca typosquat [--ecosystem npm|pypi] [--top N] NAME...
+    ssca typosquat [--ecosystem npm|pypi] [--top N] [--names-only] [--offline] [--now T] NAME...
 
-Checks package names offline against the built-in dictionary of popular
-packages, scoring them as `scan` does. Exit code 1 if a name looks like a
-popular package.
+Checks package names against the built-in dictionary of popular packages,
+scoring them as `scan` does, and confirms a match as `scan` does: a name with
+an established release history (see
+[Malicious-package signals](#malicious-package-signals-and-typosquatting)) is
+`ok` with the reason, and an npm name with downloads comparable to its target
+or a maintainer in common with it is a companion package. A match whose release
+history cannot be read stays suspect with the reason; a name that is not in the
+registry is suspect as well. The registry data is read through the cache
+(`--cache`, `--offline`); `--now` fixes the time against which the history is
+judged. `--names-only` compares the names with the dictionary only and needs
+no network. Exit code 1 if a name looks like a popular package.
 
 ### ci-audit
 
-    ssca ci-audit [dir]
+    ssca ci-audit [--json | --sarif] [dir]
 
 Audits GitHub Actions workflows and GitLab CI files; see [CI audit](#ci-audit).
+`--json` prints the audited files, the findings and the reasons of an
+incomplete audit (`incomplete`); `--sarif` prints the findings as SARIF 2.1.0
+for code scanning, with the reasons of an incomplete audit as tool execution
+notifications of an unsuccessful invocation. The exit code is that of the text
+output.
 
 ### verify-artifact
 
@@ -413,11 +446,21 @@ nothing in them.
 Without `--policy`, `scan` uses `.ssca/policy.yaml` (or `.ssca/policy.yml`) of
 the project directory when it exists and the built-in policy otherwise;
 `--policy FILE` names another file and `--policy builtin` forces the built-in
-policy. The summary, `report.json` (`policy`: source, SHA-256, discovered) and
-`manifest.json` state which policy was applied. A policy file replaces the
-built-in policy as a whole: its thresholds and rules are all that apply, apart
-from the baseline rules below, so a project policy repeats every built-in rule
-it wants to keep.
+policy. The summary, `report.json` (`policy`: source, SHA-256, discovered,
+extends) and `manifest.json` state which policy was applied.
+
+**Inheritance.** A policy file with `extends: builtin` changes the built-in
+policy: its rules apply except those listed in `disable`, a rule of the file
+replaces the built-in rule with the same id (for example `cooldown` with
+`action: fail`), the other rules of the file are added, and a threshold that
+the file does not set keeps its built-in value (`fail_on_band: none` switches
+the band rule off). `report.json` then also records the SHA-256 of the
+built-in policy (`policy.extends`), because a new version of ssca may change
+its rules. A rule id in `disable` that the built-in policy does not have, a
+baseline rule, a rule of the file itself, and `disable` without `extends` are
+errors. A policy file without `extends` replaces the built-in policy as a
+whole: its thresholds and rules are all that apply, apart from the baseline
+rules below.
 
 The built-in policy fails on the critical risk band, warns on high, fails an
 incomplete analysis and contains these rules: `known-malicious`,
@@ -454,6 +497,12 @@ workflow must be exactly that one). `reachability: true` turns on
 `--reachability`; `verify_provenance: false` or `true` decides whether
 attestations are verified, also against `--provenance` on the command line
 (`scan` warns when it overrides the flag).
+
+`thresholds.unpinned_dependencies` decides about PyPI dependencies that come
+from manifests without a lockfile (versions resolved at the run, no hashes
+pinned by the project; see [sbom](#sbom)): `warn` (default) only warns on
+standard error, `fail` makes the analysis incomplete (exit code 2 under
+`incomplete_analysis: fail`), as npm without a lockfile always is.
 
 Other keys: risk weights and thresholds, `registries` (mirrors),
 `internal.registry`, `trusted_builders`, `dev_heuristics`, `vex:` (relative

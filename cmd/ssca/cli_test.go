@@ -64,7 +64,7 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"diff", "-h"}, exitOK},
 		{[]string{"verify-artifact", "-h"}, exitOK},
 		{[]string{"typosquat", "lodash"}, exitOK},
-		{[]string{"typosquat", "lodahs"}, exitViolation},
+		{[]string{"typosquat", "--names-only", "lodahs"}, exitViolation},
 		{[]string{"typosquat", ""}, exitUsage},
 		{[]string{"scan", "--offline", filepath.Join(empty, "missing")}, exitUsage},
 		{[]string{"scan", "--offline", "--ecosystem", "cargo", empty}, exitUsage},
@@ -128,11 +128,11 @@ func TestScanFindsProjectPolicy(t *testing.T) {
 	if got := run([]string{"scan", "--offline", "--quiet", "--policy", "builtin", "--out", t.TempDir(), dir}); got != exitUsage {
 		t.Errorf("--policy builtin: exit %d, want %d (no manifest)", got, exitUsage)
 	}
-	info, err := policyInfo(dir, filepath.Join(dir, ".ssca", "policy.yaml"), true)
+	info, err := policyInfo(dir, filepath.Join(dir, ".ssca", "policy.yaml"), true, nil)
 	if err != nil || info.Source != ".ssca/policy.yaml" || !info.Discovered || len(info.SHA256) != 64 {
 		t.Errorf("policy info %+v, %v", info, err)
 	}
-	if info, _ := policyInfo(dir, "", false); info.Source != "built-in" || !strings.Contains(info.Describe(), "has no") {
+	if info, _ := policyInfo(dir, "", false, nil); info.Source != "built-in" || !strings.Contains(info.Describe(), "has no") {
 		t.Errorf("built-in policy info %+v", info)
 	}
 	if d := (report.PolicyInfo{Source: "built-in", Forced: true}).Describe(); !strings.Contains(d, "--policy builtin") {

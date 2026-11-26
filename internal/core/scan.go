@@ -136,6 +136,20 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 		r.Project.InputHashes[in] = report.HashFile(filepath.Join(o.Dir, in))
 	}
 	incomplete := append([]string{}, g.Incomplete...)
+	// PyPI dependencies without a lockfile are a valid input, but their
+	// versions are resolved at this run and their hashes are not pinned; the
+	// policy can make that an incomplete analysis (npm without a lockfile
+	// always is one)
+	if o.Policy.Thresholds.UnpinnedDependencies == "fail" {
+		if n := Unlocked(g.Inputs, comps)[model.PyPI]; n > 0 {
+			verb := "versions are"
+			if n == 1 {
+				verb = "version is"
+			}
+			incomplete = append(incomplete, fmt.Sprintf("no lockfile for the PyPI dependencies: %d package %s not pinned with a hash "+
+				"and resolved at this run (thresholds.unpinned_dependencies: fail)", n, verb))
+		}
+	}
 
 	// M2, M4 metadata and M5 run concurrently; M3 and the signals need the metadata
 	var (
@@ -409,42 +423,15 @@ func Scan(ctx context.Context, o Options) (*report.Report, *sbom.Doc, error) {
 	return r, doc, nil
 }
 
-// confirmSquat re-checks a suspected typosquat with the npm downloads API
-// (popularity gap of Algorithm 3.2 line 11) and dismisses it when the
-// candidate shares a maintainer with the target (companion packages such as
-// mongodb-core of mongodb).
+// confirmSquat re-checks a suspected npm typosquat with the downloads API
+// and the maintainers (risk.ConfirmNPMSquat); it records the downloads of
+// the candidate in its metadata.
 func confirmSquat(ctx context.Context, o Options, c *model.Component, s risk.Squat) bool {
-	reg := npm.NewRegistry(o.Net)
-	if d, err := reg.Downloads(ctx, c.FullName()); err == nil && c.Meta != nil {
+	ok, d, _ := risk.ConfirmNPMSquat(ctx, npm.NewRegistry(o.Net), c.FullName(), c.Version, s.Target)
+	if d >= 0 && c.Meta != nil {
 		c.Meta.Downloads = d
-		tgt, err2 := reg.Downloads(ctx, s.Target)
-		if err2 == nil && float64(tgt) < 100*float64(max(d, 1)) {
-			return false
-		}
 	}
-	cur, err := reg.Version(ctx, c.FullName(), c.Version)
-	if err != nil {
-		return true
-	}
-	tp, err := reg.Packument(ctx, s.Target)
-	if err != nil {
-		return true
-	}
-	latest := tp.DistTags["latest"]
-	td, err := reg.Version(ctx, s.Target, latest)
-	if err != nil {
-		return true
-	}
-	owners := map[string]bool{}
-	for _, m := range td.Maintainers {
-		owners[strings.ToLower(m.Name)] = true
-	}
-	for _, m := range cur.Maintainers {
-		if owners[strings.ToLower(m.Name)] {
-			return false
-		}
-	}
-	return true
+	return ok
 }
 
 // metadataUnavailable returns one incomplete reason per metadata source that

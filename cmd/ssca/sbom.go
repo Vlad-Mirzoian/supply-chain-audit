@@ -11,9 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/core"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
@@ -30,6 +28,7 @@ func cmdSBOM(args []string) int {
 	noEnrich := fs.Bool("no-enrich", false, "write only what the lockfiles and manifests record: no suppliers, licenses or\nregistry hashes (Maven jar SHA-1, SHA-256 of the PyPI files); without them most\nSBOMs miss CISA minimum elements. By default these are taken from the registries\n(with --offline from the data snapshot; what is not there stays empty)")
 	asJSON := fs.Bool("json", false, "with --validate: print the assessment as JSON")
 	minScore := fs.Float64("min-score", defaultMinScore, "with --validate: lowest acceptable CISA score in percent; below it the exit code is 1")
+	nowFlag := fs.String("now", "", "creation time of the SBOMs (RFC 3339) instead of the time of the run: the same\nproject and data snapshot then give byte-identical SBOMs")
 	if code, ok := parseArgs(fs, args); !ok {
 		return code
 	}
@@ -62,7 +61,7 @@ func cmdSBOM(args []string) int {
 	if *validate != "" {
 		// these would be silently ignored: --validate reads a file and
 		// builds no graph
-		for _, f := range []string{"out", "ecosystem", "runtime-only", "resolve"} {
+		for _, f := range []string{"out", "ecosystem", "runtime-only", "resolve", "now"} {
 			if set[f] {
 				fmt.Fprintf(os.Stderr, "error: --%s applies only to generating an SBOM, not to --validate\n", f)
 				return exitUsage
@@ -90,6 +89,10 @@ func cmdSBOM(args []string) int {
 		}
 		return code
 	}
+	now, ok := parseNow(*nowFlag)
+	if !ok {
+		return exitUsage
+	}
 	dir, ok := projectDir(fs)
 	if !ok || !g.checkTarget(dir) {
 		return exitUsage
@@ -100,11 +103,11 @@ func cmdSBOM(args []string) int {
 		return buildExit(err)
 	}
 	if !*noEnrich {
-		col := risk.NewCollector(g.client(), time.Now())
+		col := risk.NewCollector(g.client(), nowOr(now))
 		col.ArtifactHashes = true
 		col.Collect(context.Background(), gr.Components())
 	}
-	doc := sbom.FromGraph(gr, Version, time.Now())
+	doc := sbom.FromGraph(gr, Version, nowOr(now))
 	cdx, err := doc.CycloneDX(doc.RootName, doc.RootVersion)
 	var spdx []byte
 	if err == nil {
@@ -134,38 +137,15 @@ func cmdSBOM(args []string) int {
 	return graphExit(gr)
 }
 
-// lockfiles are the files that pin the versions and hashes of an ecosystem.
-var lockfiles = map[string][]string{
-	model.NPM:  {"package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml"},
-	model.PyPI: {"uv.lock", "poetry.lock", "Pipfile.lock"},
-}
-
 // unlockedWarnings names the ecosystems whose dependencies come from
-// manifests without a lockfile (or were resolved with --resolve), given the
-// input files and the components of a graph: their hashes are not pinned by
-// the project, and the versions that the manifests do not pin exactly are
-// resolved at the time of the run, so they can differ from those that an
-// installation gets. Without a lockfile
-// npm marks the graph incomplete, PyPI does not (a requirements file is a
-// valid input), so for PyPI this warning is the only hint. A requirements
-// file that pins every package with --hash counts as locked. Maven has no
-// lockfile and is not named. consequence is added for the command (sbom: the
-// SBOM records only registry hashes).
+// manifests without a lockfile (core.Unlocked). Without a lockfile npm
+// marks the graph incomplete; PyPI does not (a requirements file is a valid
+// input) unless the policy sets thresholds.unpinned_dependencies: fail, so
+// for PyPI this warning is otherwise the only hint. Maven has no lockfile
+// and is not named. consequence is added for the command (sbom: the SBOM
+// records only registry hashes).
 func unlockedWarnings(inputs []string, comps []*model.Component, consequence string) []string {
-	locked := map[string]bool{}
-	for _, in := range inputs {
-		for eco, names := range lockfiles {
-			if slices.Contains(names, filepath.Base(in)) {
-				locked[eco] = true
-			}
-		}
-	}
-	unpinned := map[string]int{}
-	for _, c := range comps {
-		if _, ok := lockfiles[c.Ecosystem]; ok && len(c.Integrity) == 0 {
-			unpinned[c.Ecosystem]++
-		}
-	}
+	unpinned := core.Unlocked(inputs, comps)
 	advice := map[string]string{
 		model.NPM:  "npm install --package-lock-only",
 		model.PyPI: "uv lock, poetry lock or pip-compile --generate-hashes",
@@ -173,7 +153,7 @@ func unlockedWarnings(inputs []string, comps []*model.Component, consequence str
 	label := map[string]string{model.NPM: "npm", model.PyPI: "PyPI"}
 	var out []string
 	for _, eco := range []string{model.NPM, model.PyPI} {
-		if unpinned[eco] > 0 && !locked[eco] {
+		if unpinned[eco] > 0 {
 			out = append(out, fmt.Sprintf("no lockfile for the %s dependencies: %s not pinned with a hash by the project, and every version "+
 				"that the manifests do not pin exactly (transitive ones included) is resolved at this run, so it can differ from what an "+
 				"installation gets%s; pin versions and hashes with a lockfile (%s)",

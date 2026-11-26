@@ -3,6 +3,7 @@ package risk
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -298,5 +299,31 @@ func TestPyPIArtifactHashes(t *testing.T) {
 		if !slices.Equal(c.Meta.RepoSHA256, want) {
 			t.Errorf("artifact hashes %v: %v, want %v", sbom, c.Meta.RepoSHA256, want)
 		}
+	}
+}
+
+// History gives the release history of a package by name as Collect does:
+// from deps.dev, or from the PyPI Simple API when deps.dev does not know the
+// package (yet); a package that no source knows is netx.ErrNotFound.
+func TestHistoryByName(t *testing.T) {
+	fakePyPI(t, "django-redis",
+		fakeRelease{"6.0.0", "2025-06-01T10:00:00Z", "", "", nil},
+		fakeRelease{"7.0.0", "2026-10-01T10:00:00Z", "", "", nil},
+		map[string]string{"brand-new": "2026-11-24T08:00:00Z"})
+	col := NewCollector(netx.New("", false), time.Now())
+	ctx := context.Background()
+	m, err := col.History(ctx, model.PyPI, "django-redis")
+	if err != nil || m.Releases != 2 || m.FirstReleaseAt.Format("2006-01-02") != "2025-06-01" || m.LatestReleaseAt.Format("2006-01-02") != "2026-10-01" {
+		t.Errorf("deps.dev history: %v, %+v", err, m)
+	}
+	m, err = col.History(ctx, model.PyPI, "brand-new")
+	if err != nil || m.Releases != 1 || m.FirstReleaseAt.Format(time.RFC3339) != "2026-11-24T08:00:00Z" {
+		t.Errorf("history from the Simple API: %v, %+v", err, m)
+	}
+	if _, err := col.History(ctx, model.PyPI, "no-such-package"); !errors.Is(err, netx.ErrNotFound) {
+		t.Errorf("unknown package: %v, want ErrNotFound", err)
+	}
+	if _, err := col.History(ctx, model.Maven, "org.x:lib"); !errors.Is(err, netx.ErrNotFound) {
+		t.Errorf("Maven without deps.dev record: %v, want ErrNotFound", err)
 	}
 }

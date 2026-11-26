@@ -72,6 +72,10 @@ type PolicyInfo struct {
 	// Forced: --policy builtin, the project's policy file (if any) was
 	// deliberately not used.
 	Forced bool `json:"forced,omitempty"`
+	// Extends names the policy that the file changes (extends: builtin):
+	// "built-in sha256:<hash>", so that a report shows which version of the
+	// built-in rules took part in the decision.
+	Extends string `json:"extends,omitempty"`
 }
 
 // Describe is the one-line description used in the summaries.
@@ -82,9 +86,16 @@ func (p PolicyInfo) Describe() string {
 	case p.Source == "" || p.Source == "built-in":
 		return "built-in default policy (the project has no .ssca/policy.yaml)"
 	case p.Discovered:
-		return p.Source + " (found in the project)"
+		return p.Source + " (found in the project" + p.extendsNote() + ")"
 	}
-	return p.Source + " (--policy)"
+	return p.Source + " (--policy" + p.extendsNote() + ")"
+}
+
+func (p PolicyInfo) extendsNote() string {
+	if p.Extends == "" {
+		return ""
+	}
+	return ", extends the built-in policy"
 }
 
 // Project describes the audited project and its inputs.
@@ -211,12 +222,19 @@ func (r *Report) SARIF() ([]byte, error) {
 		if f.Detail != "" {
 			msg += " — " + f.Detail
 		}
+		fp := []string{rid, f.Component, f.File}
+		if f.Kind == model.KindCI {
+			// several findings of one CI rule in one file (two unpinned
+			// actions) differ only in what they name; the line is left out
+			// so that the fingerprint survives edits above the finding
+			fp = append(fp, f.Title, f.Detail)
+		}
 		res := map[string]any{
 			"ruleId": rid, "level": level(f.Severity), "message": map[string]string{"text": msg},
 			"locations": []map[string]any{{"physicalLocation": map[string]any{
 				"artifactLocation": map[string]string{"uri": filepath.ToSlash(uri)},
 				"region":           map[string]int{"startLine": line}}}},
-			"partialFingerprints": map[string]string{"ssca/v1": fingerprint(rid, f.Component, f.File)},
+			"partialFingerprints": map[string]string{"ssca/v1": fingerprint(fp...)},
 		}
 		results = append(results, res)
 	}

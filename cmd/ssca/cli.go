@@ -29,7 +29,7 @@ const (
 )
 
 // Version of the suite, set at build time with -ldflags.
-var Version = "1.0.7"
+var Version = "1.1.0"
 
 type global struct {
 	cacheDir string
@@ -184,11 +184,11 @@ Usage:
   ssca graph [flags] [dir]       print the dependency graph (M0)
   ssca sbom [flags] [dir]        write CycloneDX and SPDX SBOMs (M1)
   ssca diff [flags] A B          compare two SBOMs (Algorithm 3.4)
-  ssca typosquat [flags] NAME..  check package names offline (Algorithm 3.2)
-  ssca ci-audit [dir]            audit CI workflows and local actions (M5)
+  ssca typosquat [flags] NAME..  check package names (Algorithm 3.2)
+  ssca ci-audit [flags] [dir]    audit CI workflows and local actions (M5)
   ssca verify-artifact [flags]   verify a file against a Sigstore bundle (M3)
   ssca cache [flags]             show the state of the cache in $SSCA_CACHE or --cache
-  ssca version                   print version
+  ssca version, --version        print version
 `)
 }
 
@@ -201,7 +201,7 @@ func run(args []string) int {
 	case "-h", "-help", "--help", "help":
 		usage()
 		return exitOK
-	case "version":
+	case "version", "--version", "-version":
 		fmt.Println("ssca", Version)
 		return exitOK
 	}
@@ -224,6 +224,29 @@ var commands = map[string]func([]string) int{
 	"ci-audit":        cmdCIAudit,
 	"verify-artifact": cmdVerifyArtifact,
 	"cache":           cmdCache,
+}
+
+// parseNow reads the --now flag of scan, sbom, diff and typosquat: an
+// RFC 3339 time, or the zero time when the flag is empty (the time of the
+// run is then used).
+func parseNow(s string) (time.Time, bool) {
+	if s == "" {
+		return time.Time{}, true
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error: --now:", err)
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+// nowOr is t, or the current time when t is zero.
+func nowOr(t time.Time) time.Time {
+	if t.IsZero() {
+		return time.Now()
+	}
+	return t
 }
 
 func commonOptions(g *global) common.Options {

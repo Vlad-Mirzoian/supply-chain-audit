@@ -1,12 +1,14 @@
 package risk
 
 import (
+	"context"
 	"fmt"
 	"hash/fnv"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/eco/npm"
 	"github.com/Vlad-Mirzoian/supply-chain-audit/internal/model"
 )
 
@@ -457,4 +459,48 @@ func Established(m *model.PackageMeta, now time.Time) (bool, string) {
 	}
 	return true, fmt.Sprintf("established package: first release %s, %d releases over %.1f years",
 		m.FirstReleaseAt.UTC().Format("2006-01-02"), m.Releases, span.Hours()/24/365.25)
+}
+
+// ---------------------------------------------------------------- npm confirmation
+
+// ConfirmNPMSquat re-checks a suspected npm typosquat name@version of target
+// with registry data that the corpus does not hold: the popularity gap of
+// Algorithm 3.2 line 11 with the real downloads of the last month (the
+// candidate is no typosquat if the target has fewer than 100 times its
+// downloads), and the maintainers (a candidate that shares a maintainer with
+// the target is a companion package, such as mongodb-core of mongodb). It
+// returns whether the match stands, the downloads of the candidate (-1 if
+// unknown) and, for a dismissed match, the reason. Data that cannot be read
+// leaves the match standing.
+func ConfirmNPMSquat(ctx context.Context, reg *npm.RegistryClient, name, version, target string) (bool, int64, string) {
+	dl := int64(-1)
+	if d, err := reg.Downloads(ctx, name); err == nil {
+		dl = d
+		tgt, err2 := reg.Downloads(ctx, target)
+		if err2 == nil && float64(tgt) < 100*float64(max(d, 1)) {
+			return false, dl, fmt.Sprintf("popular in its own right: %d downloads last month, %s has %d", d, target, tgt)
+		}
+	}
+	cur, err := reg.Version(ctx, name, version)
+	if err != nil {
+		return true, dl, ""
+	}
+	tp, err := reg.Packument(ctx, target)
+	if err != nil {
+		return true, dl, ""
+	}
+	td, err := reg.Version(ctx, target, tp.DistTags["latest"])
+	if err != nil {
+		return true, dl, ""
+	}
+	owners := map[string]bool{}
+	for _, m := range td.Maintainers {
+		owners[strings.ToLower(m.Name)] = true
+	}
+	for _, m := range cur.Maintainers {
+		if owners[strings.ToLower(m.Name)] {
+			return false, dl, fmt.Sprintf("shares the maintainer %s with %s", m.Name, target)
+		}
+	}
+	return true, dl, ""
 }

@@ -58,7 +58,7 @@ func cmdScan(args []string) int {
 		}
 		return exitUsage
 	}
-	polInfo, err := policyInfo(dir, polFile, discovered)
+	polInfo, err := policyInfo(dir, polFile, discovered, pol)
 	polInfo.Forced = *policyPath == policy.Builtin
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -83,12 +83,9 @@ func cmdScan(args []string) int {
 		}
 		*prov = *pol.Provenance
 	}
-	var now time.Time
-	if *nowFlag != "" {
-		if now, err = time.Parse(time.RFC3339, *nowFlag); err != nil {
-			fmt.Fprintln(os.Stderr, "error: --now:", err)
-			return exitUsage
-		}
+	now, ok := parseNow(*nowFlag)
+	if !ok {
+		return exitUsage
 	}
 	opts := core.Options{
 		Dir: dir, Ecosystem: g.eco, IncludeDev: g.dev, RuntimeOnly: g.runtime, ForceResolve: g.resolve, Net: g.client(),
@@ -107,10 +104,7 @@ func cmdScan(args []string) int {
 		return buildExit(err)
 	}
 	rep.Policy = polInfo
-	created := now
-	if created.IsZero() {
-		created = time.Now()
-	}
+	created := nowOr(now)
 	// the root is named as by the sbom command (npm "@scope/name", Maven
 	// "group:artifact"), not by the last segment of its purl
 	cdx, err := doc.CycloneDX(doc.RootName, doc.RootVersion)
@@ -173,11 +167,12 @@ func buildExit(err error) int {
 
 // policyInfo records which policy a scan applied: the file (relative to the
 // project directory when it was found there) and its SHA-256, or the
-// built-in policy.
-func policyInfo(dir, file string, discovered bool) (report.PolicyInfo, error) {
+// built-in policy; a file that extends the built-in policy also names the
+// SHA-256 of the built-in policy.
+func policyInfo(dir, file string, discovered bool, pol *policy.Policy) (report.PolicyInfo, error) {
+	builtin := sha256.Sum256([]byte(policy.Default))
 	if file == "" {
-		h := sha256.Sum256([]byte(policy.Default))
-		return report.PolicyInfo{Source: "built-in", SHA256: hex.EncodeToString(h[:])}, nil
+		return report.PolicyInfo{Source: "built-in", SHA256: hex.EncodeToString(builtin[:])}, nil
 	}
 	b, err := os.ReadFile(file)
 	if err != nil {
@@ -190,7 +185,11 @@ func policyInfo(dir, file string, discovered bool) (report.PolicyInfo, error) {
 			src = filepath.ToSlash(rel)
 		}
 	}
-	return report.PolicyInfo{Source: src, SHA256: hex.EncodeToString(h[:]), Discovered: discovered}, nil
+	info := report.PolicyInfo{Source: src, SHA256: hex.EncodeToString(h[:]), Discovered: discovered}
+	if pol != nil && pol.Extends == policy.Builtin {
+		info.Extends = "built-in sha256:" + hex.EncodeToString(builtin[:])
+	}
+	return info, nil
 }
 
 // autoVEX turns "not reachable" results into an OpenVEX document so that the

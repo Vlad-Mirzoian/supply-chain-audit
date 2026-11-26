@@ -198,23 +198,13 @@ func (c *Collector) collectOne(ctx context.Context, comp *model.Component) *mode
 	history := err == nil // release history from deps.dev; else from the registry
 	var prev string
 	if err == nil {
-		var latest time.Time
+		releaseHistory(m, pkg)
 		var cur time.Time
 		for _, v := range pkg.Versions {
-			if v.PublishedAt.After(latest) {
-				latest = v.PublishedAt
-			}
-			if !v.PublishedAt.IsZero() {
-				m.Releases++
-				if m.FirstReleaseAt.IsZero() || v.PublishedAt.Before(m.FirstReleaseAt) {
-					m.FirstReleaseAt = v.PublishedAt
-				}
-			}
 			if v.VersionKey.Version == comp.Version {
 				cur = v.PublishedAt
 			}
 		}
-		m.LatestReleaseAt = latest
 		m.PublishedAt = cur
 		// previous version: the highest version below the current one
 		// among stable releases published before it
@@ -265,6 +255,61 @@ func (c *Collector) collectOne(ctx context.Context, comp *model.Component) *mode
 		m.AnyProvenance = true
 	}
 	return m
+}
+
+// releaseHistory sets the number, the first and the latest of the dated
+// releases of a package from its deps.dev record.
+func releaseHistory(m *model.PackageMeta, pkg *ddPackage) {
+	for _, v := range pkg.Versions {
+		if v.PublishedAt.After(m.LatestReleaseAt) {
+			m.LatestReleaseAt = v.PublishedAt
+		}
+		if !v.PublishedAt.IsZero() {
+			m.Releases++
+			if m.FirstReleaseAt.IsZero() || v.PublishedAt.Before(m.FirstReleaseAt) {
+				m.FirstReleaseAt = v.PublishedAt
+			}
+		}
+	}
+}
+
+// History returns the release history of a package by name (Releases,
+// FirstReleaseAt and LatestReleaseAt), from the same sources as Collect: the
+// deps.dev record, or the registry's record of the release times when
+// deps.dev does not know the package (it indexes a new one only after a
+// delay) or cannot be reached. Maven has only deps.dev. The error is
+// netx.ErrNotFound for a package that the sources do not know; any other
+// error means that the history is unknown.
+func (c *Collector) History(ctx context.Context, eco, name string) (*model.PackageMeta, error) {
+	m := &model.PackageMeta{Scorecard: -1, NewDepMinAgeDays: -1}
+	pkg, err := c.ddPackage(ctx, eco, name)
+	if err == nil {
+		releaseHistory(m, pkg)
+		if m.Releases > 0 {
+			return m, nil
+		}
+		err = netx.ErrNotFound
+	}
+	var times map[string]time.Time
+	switch eco {
+	case model.NPM:
+		times, err = c.npm.Times(ctx, name)
+	case model.PyPI:
+		var sp *pypi.SimpleProject
+		if sp, err = c.pypi.Simple(ctx, name); err == nil {
+			times = sp.ReleaseTimes()
+		}
+	default:
+		return m, err
+	}
+	if err != nil {
+		return m, err
+	}
+	registryTimes(m, "", times)
+	if m.Releases == 0 {
+		return m, netx.ErrNotFound
+	}
+	return m, nil
 }
 
 func isPre(v string) bool {

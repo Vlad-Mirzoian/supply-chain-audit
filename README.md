@@ -97,12 +97,12 @@ Other commands:
 | `scan [dir]` | full audit with policy decision (M0–M6) |
 | `graph [dir]` | dependency graph summary, `--tree`, `--json` |
 | `sbom [dir]` | write SBOMs with suppliers, licenses and hashes from the registries (`--no-enrich`: lockfile data only, no network); `--validate FILE` scores an SBOM against the CISA minimum elements |
-| `diff A B` | compare two SBOMs |
-| `typosquat NAME…` | check package names against popular packages, offline |
-| `ci-audit [dir]` | audit CI workflows and local actions |
+| `diff A B` | compare two SBOMs; `release-vs-release` rates a newly added package with less than 7 days of release history as high |
+| `typosquat NAME…` | check package names against popular packages, confirmed with the release history as in `scan` (`--names-only`: dictionary only, offline) |
+| `ci-audit [dir]` | audit CI workflows and local actions (`--json`, `--sarif`) |
 | `verify-artifact FILE` | verify a file against a Sigstore bundle |
 | `cache` / `cache seal` | inspect or freeze the data snapshot |
-| `version` | print the version |
+| `version` | print the version (also `--version`) |
 
 Main `scan` flags: `--out`, `--policy`, `--vex`, `--offline`, `--now`,
 `--include-dev`, `--runtime-only`, `--reachability`. Every command prints its
@@ -114,14 +114,28 @@ flags with `-h`; all details are in [docs/USAGE.md](docs/USAGE.md).
 |---|---|
 | 0 | passed |
 | 1 | policy violation: the build is blocked |
-| 2 | analysis incomplete (data missing, lockfile out of sync, …): not reported as a pass unless the policy sets `incomplete_analysis: warn` |
+| 2 | analysis incomplete (data missing, lockfile out of sync, PyPI without a lockfile under `unpinned_dependencies: fail`, …): not reported as a pass unless the policy sets `incomplete_analysis: warn` |
 | 3 | usage error: bad or misplaced flag (flags go before the directory), wrong directory, invalid policy or VEX document |
 | 4 | self-check failure: a sealed data snapshot was modified |
 
 ## Policy
 
 Without `--policy`, `scan` uses `.ssca/policy.yaml` of the project if it exists
-and the built-in policy otherwise. A minimal project policy:
+and the built-in policy otherwise. A policy that keeps the built-in rules and
+adds what is specific to the project:
+
+```yaml
+extends: builtin          # the built-in rules and thresholds apply
+disable: [cooldown]       # ... except these
+internal:
+  scopes: ["@acme"]
+  registry: https://npm.acme.internal/
+thresholds:
+  unpinned_dependencies: fail   # PyPI without a lockfile: incomplete analysis
+```
+
+Without `extends` the file replaces the built-in policy and lists every rule
+that applies:
 
 ```yaml
 thresholds:
@@ -178,9 +192,6 @@ SHA-256 manifest; a changed file then stops an offline run with exit code 4.
 - Online runs depend on public services (OSV.dev, deps.dev, the registries).
   When one of them cannot be reached the result is incomplete (exit code 2),
   not a pass.
-- `ssca typosquat` checks names against the dictionary only; the check inside
-  `scan` also dismisses a match for an established package (years of release
-  history), so `typosquat` can name a package that `scan` accepts.
 - It is a research prototype: interfaces and report formats may change.
 
 ## Development

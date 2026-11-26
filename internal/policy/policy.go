@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -45,7 +46,13 @@ type Exception struct {
 
 // Policy is the parsed policy file.
 type Policy struct {
-	Version    int      `yaml:"version"`
+	Version int `yaml:"version"`
+	// Extends: "builtin" makes the file a change of the built-in policy
+	// instead of its replacement: the built-in rules apply except those in
+	// Disable, a rule of the file replaces the built-in rule of the same id,
+	// and thresholds the file does not set keep their built-in values.
+	Extends    string   `yaml:"extends"`
+	Disable    []string `yaml:"disable"`
 	Ecosystems []string `yaml:"ecosystems"`
 	// DataSnapshot requires a sealed data snapshot: "sealed" (any seal) or
 	// "sha256:<seal id>" (this one); the run must then be offline on it, and
@@ -55,6 +62,11 @@ type Policy struct {
 		FailOnBand         string `yaml:"fail_on_band"`
 		WarnOnBand         string `yaml:"warn_on_band"`
 		IncompleteAnalysis string `yaml:"incomplete_analysis"`
+		// UnpinnedDependencies decides about PyPI dependencies that come
+		// from manifests without a lockfile (versions resolved at the run,
+		// no hashes pinned by the project): "warn" (default) only warns,
+		// "fail" makes the analysis incomplete, as npm without a lockfile.
+		UnpinnedDependencies string `yaml:"unpinned_dependencies"`
 	} `yaml:"thresholds"`
 	Rules             []*Rule           `yaml:"rules"`
 	Exceptions        []Exception       `yaml:"exceptions"`
@@ -208,18 +220,22 @@ func Load(path string) (*Policy, error) {
 		}
 		src = b
 	}
-	p := &Policy{}
-	dec := yaml.NewDecoder(bytes.NewReader(src))
-	dec.KnownFields(true) // a misspelt key (e.g. "treshholds") must not be ignored
-	if err := dec.Decode(p); err != nil {
-		if errors.Is(err, io.EOF) {
-			err = errors.New("empty policy file")
-		}
-		return nil, fmt.Errorf("policy: %w", err)
+	p, err := decode(src)
+	if err != nil {
+		return nil, err
 	}
-	for key, band := range map[string]string{"fail_on_band": p.Thresholds.FailOnBand, "warn_on_band": p.Thresholds.WarnOnBand} {
-		if band != "" && model.SeverityRank(band) == 0 {
-			return nil, fmt.Errorf("policy: thresholds.%s: unknown band %q (critical, high, medium or low)", key, band)
+	if p.Extends != "" || len(p.Disable) > 0 {
+		if err := p.inherit(); err != nil {
+			return nil, err
+		}
+	}
+	for key, band := range map[string]*string{"fail_on_band": &p.Thresholds.FailOnBand, "warn_on_band": &p.Thresholds.WarnOnBand} {
+		// "none" switches the band rule off, also against an inherited value
+		if *band == "none" {
+			*band = ""
+		}
+		if *band != "" && model.SeverityRank(*band) == 0 {
+			return nil, fmt.Errorf("policy: thresholds.%s: unknown band %q (critical, high, medium, low or none)", key, *band)
 		}
 	}
 	if d := p.DataSnapshot; d != "" && d != "sealed" && !(strings.HasPrefix(d, "sha256:") && len(d) > len("sha256:")) {
@@ -229,6 +245,11 @@ func Load(path string) (*Policy, error) {
 	case "", "fail", "warn":
 	default:
 		return nil, fmt.Errorf("policy: thresholds.incomplete_analysis: unknown value %q (fail or warn)", p.Thresholds.IncompleteAnalysis)
+	}
+	switch p.Thresholds.UnpinnedDependencies {
+	case "", "fail", "warn":
+	default:
+		return nil, fmt.Errorf("policy: thresholds.unpinned_dependencies: unknown value %q (fail or warn)", p.Thresholds.UnpinnedDependencies)
 	}
 	for _, r := range p.Registries {
 		if u, err := url.Parse(r); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -264,6 +285,9 @@ func Load(path string) (*Policy, error) {
 	if p.Thresholds.IncompleteAnalysis == "" {
 		p.Thresholds.IncompleteAnalysis = "fail"
 	}
+	if p.Thresholds.UnpinnedDependencies == "" {
+		p.Thresholds.UnpinnedDependencies = "warn"
+	}
 	if err := compileRules(p.Rules); err != nil {
 		return nil, err
 	}
@@ -296,6 +320,93 @@ func Load(path string) (*Policy, error) {
 		}
 	}
 	return p, nil
+}
+
+// decode parses a policy document; a misspelt key (e.g. "treshholds") is an
+// error, not ignored.
+func decode(src []byte) (*Policy, error) {
+	p := &Policy{}
+	dec := yaml.NewDecoder(bytes.NewReader(src))
+	dec.KnownFields(true)
+	if err := dec.Decode(p); err != nil {
+		if errors.Is(err, io.EOF) {
+			err = errors.New("empty policy file")
+		}
+		return nil, fmt.Errorf("policy: %w", err)
+	}
+	return p, nil
+}
+
+// baselineIDs are the ids of the Baseline rules.
+var baselineIDs = []string{"known-malicious", "integrity-failure", "exploited-in-runtime"}
+
+// inherit applies extends: builtin and disable. The rules are those of the
+// built-in policy without the disabled ones, with a rule of the file in
+// place of the built-in rule of the same id, followed by the other rules of
+// the file; a threshold the file does not set keeps its built-in value. The
+// built-in policy sets nothing else, so every other key is the file's.
+func (p *Policy) inherit() error {
+	switch p.Extends {
+	case Builtin:
+	case "":
+		return errors.New("policy: disable needs extends: builtin (a policy file without it replaces the built-in policy, so it lists the rules that apply)")
+	default:
+		return fmt.Errorf("policy: extends: unknown value %q (builtin)", p.Extends)
+	}
+	base, err := decode([]byte(Default))
+	if err != nil {
+		return fmt.Errorf("built-in %w", err)
+	}
+	own, builtin := map[string]*Rule{}, map[string]bool{}
+	for _, r := range p.Rules {
+		if own[r.ID] != nil {
+			return fmt.Errorf("policy: rule %s is defined twice", r.ID)
+		}
+		own[r.ID] = r
+	}
+	var ids []string
+	for _, r := range base.Rules {
+		builtin[r.ID] = true
+		ids = append(ids, r.ID)
+	}
+	off := map[string]bool{}
+	for _, id := range p.Disable {
+		switch {
+		case slices.Contains(baselineIDs, id):
+			return fmt.Errorf("policy: disable: %s is a baseline rule, which every policy applies", id)
+		case own[id] != nil:
+			return fmt.Errorf("policy: disable: %s is a rule of this file", id)
+		case !builtin[id]:
+			return fmt.Errorf("policy: disable: %q is not a rule of the built-in policy (%s)", id, strings.Join(ids, ", "))
+		}
+		off[id] = true
+	}
+	var rules []*Rule
+	for _, r := range base.Rules {
+		switch {
+		case off[r.ID]:
+		case own[r.ID] != nil:
+			rules = append(rules, own[r.ID])
+		default:
+			rules = append(rules, r)
+		}
+	}
+	for _, r := range p.Rules {
+		if !builtin[r.ID] {
+			rules = append(rules, r)
+		}
+	}
+	p.Rules = rules
+	t, bt := &p.Thresholds, base.Thresholds
+	for _, x := range []struct{ v, def *string }{
+		{&t.FailOnBand, &bt.FailOnBand}, {&t.WarnOnBand, &bt.WarnOnBand},
+		{&t.IncompleteAnalysis, &bt.IncompleteAnalysis}, {&t.UnpinnedDependencies, &bt.UnpinnedDependencies},
+	} {
+		if *x.v == "" {
+			*x.v = *x.def
+		}
+	}
+	return nil
 }
 
 // compileRules checks the rules and compiles their conditions.
