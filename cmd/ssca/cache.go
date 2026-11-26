@@ -101,7 +101,7 @@ func printCache(w io.Writer, st *netx.CacheStats, root *integrity.RootCopy) {
 			fmt.Fprintf(w, "  %-26s %9d %7d %9d %10s  %s\n", h.Host, h.Responses, h.Fresh, h.NotFound, size(h.Bytes), h.Newest.UTC().Format("2006-01-02 15:04"))
 		}
 		if old := st.Responses - st.Fresh; old > 0 {
-			fmt.Fprintf(w, "  %s older than 24 h: an online run fetches them again, --offline uses them as they are\n", count(old, "response is", "responses are"))
+			fmt.Fprintf(w, "  %s older than 24 h: an online run with the default SSCA_CACHE_TTL fetches them again, --offline uses them as they are\n", count(old, "response is", "responses are"))
 		}
 	}
 	if root != nil {

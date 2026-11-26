@@ -138,10 +138,43 @@ type Identity struct {
 // GitHubActions is the issuer of GitHub Actions workload identities.
 const GitHubActions = "https://token.actions.githubusercontent.com"
 
-// RepoIdentity returns an identity for any workflow of a GitHub repository.
+// RepoIdentity returns an identity for any workflow of a GitHub repository,
+// given as owner/name, github.com/owner/name or its URL. GitHub names are
+// not case-sensitive, so neither is the match.
 func RepoIdentity(repo string) Identity {
-	repo = strings.TrimPrefix(repo, "github.com/")
-	return Identity{Issuer: GitHubActions, SANRegexp: "^https://github\\.com/" + regexp.QuoteMeta(repo) + "/"}
+	repo = strings.TrimPrefix(NormalizeRepo(repo), "github.com/")
+	return Identity{Issuer: GitHubActions, SANRegexp: "(?i)^https://github\\.com/" + regexp.QuoteMeta(repo) + "/"}
+}
+
+// NormalizeRepo turns a repository reference (owner/name, github.com/owner/
+// name, https://github.com/owner/name.git, with or without a trailing slash)
+// into host/path in lower case; a reference without a host is on GitHub.
+func NormalizeRepo(repo string) string {
+	r := strings.ToLower(strings.TrimSpace(repo))
+	for _, p := range []string{"https://", "http://", "git+https://", "git+"} {
+		r = strings.TrimPrefix(r, p)
+	}
+	r = strings.TrimSuffix(strings.TrimRight(r, "/"), ".git")
+	if first, _, _ := strings.Cut(r, "/"); !strings.Contains(first, ".") {
+		r = "github.com/" + r
+	}
+	return r
+}
+
+// FromRepo reports whether a verified result was built from the repository
+// exp: the source repository of the certificate is exp, or the signing
+// workflow belongs to exp. The comparison is by whole path segments, so that
+// "evil-axios/axios" or "axios/axios-fork" is not taken for "axios/axios".
+func FromRepo(r Result, exp string) bool {
+	want := NormalizeRepo(exp)
+	if r.SourceRepo != "" && NormalizeRepo(r.SourceRepo) == want {
+		return true
+	}
+	san := strings.ToLower(r.SignerSAN)
+	for _, p := range []string{"https://", "http://"} {
+		san = strings.TrimPrefix(san, p)
+	}
+	return strings.HasPrefix(san, want+"/")
 }
 
 // Result summarises one verification.

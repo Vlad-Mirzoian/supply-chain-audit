@@ -35,6 +35,16 @@ func cmdVerifyArtifact(args []string) int {
 		return exitUsage
 	}
 	art := fset.Arg(0)
+	// --repo is a GitHub repository: owner/name, github.com/owner/name or its
+	// URL (as the output prints it); anything else could never match
+	if *repo != "" {
+		r := integrity.NormalizeRepo(*repo)
+		if p := strings.Split(r, "/"); len(p) != 3 || p[0] != "github.com" || p[1] == "" || p[2] == "" {
+			fmt.Fprintf(os.Stderr, "error: --repo %q is not a GitHub repository (owner/name)\n", *repo)
+			return exitUsage
+		}
+		*repo = strings.TrimPrefix(r, "github.com/")
+	}
 	var want []byte
 	if *digest != "" {
 		d, err := hex.DecodeString(*digest)
@@ -95,9 +105,12 @@ func cmdVerifyArtifact(args []string) int {
 	}
 	res := verifyWith(id)
 	res.TrustedRootCopy = trust.SavedCopy(time.Now())
+	// "a, b" lists two builders: spaces around the commas are not part of an ID
 	var trusted []string
-	if *builders != "" {
-		trusted = strings.Split(*builders, ",")
+	for _, b := range strings.Split(*builders, ",") {
+		if b = strings.TrimSpace(b); b != "" {
+			trusted = append(trusted, b)
+		}
 	}
 	if res.Verified && !integrity.Trusted(res, trusted) {
 		// a valid signature, but the build ran on a builder that is not

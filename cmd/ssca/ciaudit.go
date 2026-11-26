@@ -54,6 +54,11 @@ func printCIAudit(w io.Writer, findings []*model.Finding, files, problems []stri
 		head += ": " + severityCounts(sevs)
 	}
 	fmt.Fprintln(w, head+incompleteMark(problems))
+	if len(files) == 0 && len(problems) == 0 {
+		// exit code 0 with nothing audited: say what was looked for, so
+		// that a wrong directory does not pass unnoticed
+		fmt.Fprintln(w, "  no CI files found: ci-audit reads .github/workflows/*.yml and *.yaml, the local actions they use and .gitlab-ci.yml")
+	}
 	byFile := map[string][]*model.Finding{}
 	var order []string
 	for _, f := range findings {

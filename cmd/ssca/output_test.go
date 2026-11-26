@@ -48,6 +48,11 @@ func TestTextOutputs(t *testing.T) {
 		{File: "w.yml", Line: 3, Severity: model.SevHigh, Title: "Three"},
 		{File: "a/action.yml", Line: 1, Severity: model.SevLow, Title: "One"},
 	}
+	var none bytes.Buffer
+	printCIAudit(&none, nil, nil, nil)
+	if !strings.Contains(none.String(), "no CI files found") {
+		t.Errorf("ci-audit without CI files: %q", none.String())
+	}
 	printCIAudit(&b, fs, []string{"a/action.yml", "w.yml"}, []string{"local action missing"})
 	out = b.String()
 	for _, want := range []string{"2 CI files (workflows and local actions), 3 findings: 1 high, 1 medium, 1 low — INCOMPLETE (1 reason",

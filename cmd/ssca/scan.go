@@ -74,6 +74,13 @@ func cmdScan(args []string) int {
 		}
 	}
 	if pol.Provenance != nil {
+		// the policy decides, also against the command line: a pull request
+		// cannot switch the verification off with a flag in the workflow
+		set := false
+		fs.Visit(func(f *flag.Flag) { set = set || f.Name == "provenance" })
+		if set && *prov != *pol.Provenance {
+			fmt.Fprintf(os.Stderr, "warning: --provenance=%t is overridden by verify_provenance: %t of the policy\n", *prov, *pol.Provenance)
+		}
 		*prov = *pol.Provenance
 	}
 	var now time.Time

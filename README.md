@@ -50,7 +50,7 @@ SLSA build provenance and an SBOM attestation signed with Sigstore; verify a
 download with the GitHub CLI:
 
     sha256sum -c SHA256SUMS --ignore-missing
-    gh attestation verify ssca_1.0.6_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
+    gh attestation verify ssca_1.0.7_linux_amd64 --repo Vlad-Mirzoian/supply-chain-audit
 
 ## Quick start
 

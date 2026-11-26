@@ -167,8 +167,9 @@ Audits GitHub Actions workflows and GitLab CI files; see [CI audit](#ci-audit).
     ssca verify-artifact [--bundle FILE] [--repo owner/name] [--builder IDS] [--sha512 HEX] [--json] ARTIFACT
 
 Verifies a file against a Sigstore bundle (default `<artifact>.sigstore.json`).
-`--repo` names the expected GitHub repository of the signing workflow;
-`--builder` replaces the list of trusted builders (see
+`--repo` names the expected GitHub repository of the signing workflow
+(`owner/name`, `github.com/owner/name` or its URL; case does not matter);
+`--builder` replaces the list of trusted builders, separated by commas (see
 [Integrity and provenance](#integrity-and-provenance)).
 
 ### cache
@@ -413,7 +414,10 @@ Without `--policy`, `scan` uses `.ssca/policy.yaml` (or `.ssca/policy.yml`) of
 the project directory when it exists and the built-in policy otherwise;
 `--policy FILE` names another file and `--policy builtin` forces the built-in
 policy. The summary, `report.json` (`policy`: source, SHA-256, discovered) and
-`manifest.json` state which policy was applied.
+`manifest.json` state which policy was applied. A policy file replaces the
+built-in policy as a whole: its thresholds and rules are all that apply, apart
+from the baseline rules below, so a project policy repeats every built-in rule
+it wants to keep.
 
 The built-in policy fails on the critical risk band, warns on high, fails an
 incomplete analysis and contains these rules: `known-malicious`,
@@ -441,6 +445,15 @@ report. An expired exception no longer applies and is listed as the warning
 stops the scan with exit code 3 (`policy.Schema` lists the fields rules can
 use). A CI rule on `ci.action_ref_type` applies only to unpinned-action
 findings. A condition that fails at run time makes the decision incomplete.
+
+`require_provenance` maps package names to the repository their releases must
+be built from (`axios: github.com/axios/axios`): a release without a valid
+attestation is `unsigned-artifact`, one built from another repository
+`unexpected-source` (the repository of the certificate or of the signing
+workflow must be exactly that one). `reachability: true` turns on
+`--reachability`; `verify_provenance: false` or `true` decides whether
+attestations are verified, also against `--provenance` on the command line
+(`scan` warns when it overrides the flag).
 
 Other keys: risk weights and thresholds, `registries` (mirrors),
 `internal.registry`, `trusted_builders`, `dev_heuristics`, `vex:` (relative

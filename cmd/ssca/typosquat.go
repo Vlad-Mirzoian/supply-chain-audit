@@ -30,8 +30,13 @@ func cmdTyposquat(args []string) int {
 	}
 	// Maven has no corpus of popular names: an empty corpus would report
 	// every name as "ok"
-	if *eco != "npm" && *eco != "pypi" {
-		fmt.Fprintf(os.Stderr, "error: no corpus of popular names for ecosystem %q (npm or pypi)\n", *eco)
+	switch *eco {
+	case "npm", "pypi":
+	case "maven":
+		fmt.Fprintln(os.Stderr, "error: no corpus of popular Maven names: typosquat checks npm or pypi names")
+		return exitUsage
+	default:
+		fmt.Fprintf(os.Stderr, "error: unknown ecosystem %q (npm or pypi)\n", *eco)
 		return exitUsage
 	}
 	for _, n := range fs.Args() {

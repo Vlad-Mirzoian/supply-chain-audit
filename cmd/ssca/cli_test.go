@@ -104,6 +104,10 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"diff", "--mode", "bogus", "a.json", "b.json"}, exitUsage},
 		{[]string{"verify-artifact", "--sha512", "zz", "x"}, exitUsage},
 		{[]string{"verify-artifact", filepath.Join(empty, "missing.tgz")}, exitUsage},
+		// --repo must be a GitHub repository; typosquat knows npm and pypi only
+		{[]string{"verify-artifact", "--repo", "gitlab.com/group/project", vex}, exitUsage},
+		{[]string{"verify-artifact", "--repo", "axios", vex}, exitUsage},
+		{[]string{"typosquat", "--ecosystem", "cargo", "serde"}, exitUsage},
 	}
 	for _, c := range cases {
 		if got := run(c.args); got != c.want {

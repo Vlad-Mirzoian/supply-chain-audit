@@ -273,7 +273,7 @@ func (v *Verifier) checkOne(ctx context.Context, c *model.Component) ([]*model.F
 				Title:  "Artifact without valid signature/provenance from the expected source",
 				Detail: fmt.Sprintf("policy requires provenance from %s: %s", exp, reason),
 			})
-		} else if exp != "" && !strings.Contains(strings.ToLower(res.SourceRepo+res.SignerSAN), strings.ToLower(strings.TrimPrefix(exp, "github.com/"))) {
+		} else if exp != "" && !FromRepo(*res, exp) {
 			out = append(out, &model.Finding{
 				ID: "SSCA-PROV-SOURCE", Kind: model.KindProvenance, Rule: "unexpected-source", Component: c.PURL,
 				Severity: model.SevHigh, Module: "M3",
