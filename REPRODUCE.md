@@ -41,7 +41,7 @@ scenario is a pull request that ssca blocks.
 Compared are the decision and exit code, the number of components and findings, the vulnerability findings per
 severity, the violated rules, the reasons of an incomplete analysis and the data snapshot ID. The stored results
 are those of ssca 1.0.5, except the five case-study runs, which were repeated with ssca 1.0.6 after the policy of
-the demo was reduced to its project-specific rules (26 November 2026, same snapshot and `--now`); ssca 1.0.6 and 1.0.7
+the demo was reduced to its project-specific rules (26 November 2026, same snapshot and `--now`); ssca 1.0.6 to 1.1.0
 reproduce all 84 runs.
 
 ## Steps
