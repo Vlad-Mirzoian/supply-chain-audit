@@ -253,11 +253,11 @@ func TestTyposquatConfirmsMatches(t *testing.T) {
 	reqs := registryMock(t)
 	code, out := stdout(t, "typosquat", "--cache", t.TempDir(), "--now", "2026-11-26T00:00:00Z", "lodahs", "loadsh", "lodsah", "expres", "expresss", "react")
 	for _, want := range []string{
-		"  lodahs    ok: like lodash (0.92, edit distance), loadjs (0.83, edit distance), but established package: first release 2015-06-01, 6 releases over 5.0 years\n",
+		"  lodahs    ok: like lodash (0.92, edit distance), but established package: first release 2015-06-01, 6 releases over 5.0 years\n",
 		"  loadsh    suspect: lodash (0.92, edit distance)\n",
 		"  lodsah    ok: like lodash (0.92, edit distance), but shares the maintainer JDalton with lodash\n",
 		"  expres    suspect: express (0.86, edit distance), espree (0.83, edit distance) (not in the npm registry)\n",
-		"  expresss  suspect: express (0.88, edit distance), express-ws (0.88, edit distance) (release history unavailable: ",
+		"  expresss  suspect: express (0.88, edit distance) (release history unavailable: ",
 		"  react     ok\n", "3 of 6 names look like popular packages\n",
 	} {
 		if !strings.Contains(out, want) {

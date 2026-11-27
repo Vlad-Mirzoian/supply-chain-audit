@@ -191,6 +191,16 @@ registry is suspect as well. The registry data is read through the cache
 judged. `--names-only` compares the names with the dictionary only and needs
 no network. Exit code 1 if a name looks like a popular package.
 
+The dictionaries are embedded (hashes in `internal/data/SHA256SUMS`, checked at
+start-up): 15 000 PyPI projects (top-pypi-packages, 30-day downloads) and
+16 831 npm packages (the npm-high-impact names with at least 50 000 downloads in
+2026-09-28…2026-10-27, counts from the npm downloads API). A name is compared by
+weighted edit distance, known affixes (`-js`, `-utils`, `node-`, …), reordered
+tokens and, for npm, a look-alike scope and a known affix around a mistyped name
+(`typecript-cli` → `typescript`, at most 0.85). A match needs a target with at
+least 100 times the downloads of the name; for a name of unknown popularity the
+smallest count of the dictionary is assumed.
+
 ### ci-audit
 
     ssca ci-audit [--json | --sarif] [dir]

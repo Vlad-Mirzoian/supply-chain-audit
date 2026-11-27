@@ -349,6 +349,31 @@ func (ix *Index) Candidates(name string) []Squat {
 			}
 		}
 	}
+	// npm: a known affix around a mistyped popular name (typecript-cli,
+	// lodsh-cli): the edit-distance matches of the name without the affix,
+	// at most as similar as an exact affix match; the rest keeps 4+ characters
+	if ix.Eco == "npm" && sc == "" {
+		strip := func(t string) {
+			if len(t) < 4 || t == b {
+				return
+			}
+			for _, s := range ix.Candidates(t) {
+				if s.Class == "edit-distance" {
+					put(Squat{Target: s.Target, Similarity: min(0.85, s.Similarity), Class: "affix+edit", Distance: s.Distance})
+				}
+			}
+		}
+		for _, pre := range prefixes {
+			if strings.HasPrefix(b, pre) {
+				strip(strings.TrimPrefix(b, pre))
+			}
+		}
+		for _, suf := range suffixes {
+			if strings.HasSuffix(b, suf) {
+				strip(strings.TrimSuffix(b, suf))
+			}
+		}
+	}
 	// reordered tokens
 	if strings.ContainsAny(b, "-_.") {
 		for _, id := range ix.tokens[tokenKey(b)] {

@@ -1555,7 +1555,7 @@
     "verdict": "FAIL",
     "exit_code": 1,
     "components": 2595,
-    "findings": 115,
+    "findings": 116,
     "vulnerabilities_by_severity": {
      "high": 32,
      "low": 26,
@@ -2014,7 +2014,7 @@
      "critical-reachable-cve"
     ],
     "incomplete": 0,
-    "data_snapshot": "sha256:ad1183480bc7f315ec1b916d6a63fdd9"
+    "data_snapshot": "sha256:4dddeab16355d819db081c99e7117d09"
    }
   },
   {

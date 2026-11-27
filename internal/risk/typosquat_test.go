@@ -102,3 +102,28 @@ func TestEstablished(t *testing.T) {
 		t.Error("established before its history existed")
 	}
 }
+
+// npm only: a known affix around a mistyped popular name.
+func TestAffixEditNPMOnly(t *testing.T) {
+	corpus := []Popular{{"typescript", 1_000_000_000}, {"lodash", 600_000_000}, {"zzz-small", 100}}
+	npmIx := NewIndex("npm", corpus, nil)
+	for _, n := range []string{"typecript-cli", "lodsh-cli", "node-lodahs"} {
+		got := npmIx.Check(n, -1)
+		if len(got) == 0 || got[0].Class != "affix+edit" || got[0].Similarity > 0.85 {
+			t.Errorf("npm %s: want affix+edit (<= 0.85), got %v", n, got)
+		}
+	}
+	if got := npmIx.Check("lodash-cli", -1); len(got) != 1 || got[0].Class != "affix" {
+		t.Errorf("npm lodash-cli: the exact affix rule must win, got %v", got)
+	}
+	if got := npmIx.Check("@x/typecript-cli", -1); len(got) != 0 {
+		t.Errorf("scoped names are not stripped, got %v", got)
+	}
+	if got := npmIx.Check("abcd-cli", -1); len(got) != 0 {
+		t.Errorf("abcd-cli: got %v", got)
+	}
+	pyIx := NewIndex("pypi", corpus, nil)
+	if got := pyIx.Check("typecript-cli", -1); len(got) != 0 {
+		t.Errorf("pypi must not use the npm rule, got %v", got)
+	}
+}
